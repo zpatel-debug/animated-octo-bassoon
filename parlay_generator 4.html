@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parlay Builder — March 22, 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c0f;--surface:#111318;--surface2:#181c22;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --accent:#e8ff47;--accent2:#ff6b35;--text:#f0f0ee;
+    --muted:#6b7280;--green:#22c55e;--red:#ef4444;--purple:#a78bfa;--blue:#60a5fa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--accent);}
+  .logo span{color:var(--text);}
+  .header-right{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;text-align:right;line-height:1.6;}
+  .main{padding:16px 20px;max-width:1500px;margin:0 auto;}
+  .stats-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .stat-pill strong{color:var(--accent);font-size:15px;}
+
+  /* Controls — two rows */
+  .controls{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .ctrl-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .ctrl-row+.ctrl-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .cg{display:flex;flex-direction:column;gap:4px;}
+  .cg label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .cg input{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:6px 10px;outline:none;width:82px;}
+  .cg input:focus{border-color:var(--accent);}
+  .tabs{display:flex;gap:3px;flex-wrap:wrap;}
+  .tab{padding:5px 10px;border-radius:6px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.15s;}
+  .tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+  .tab.props-tab.active{background:var(--purple);border-color:var(--purple);color:#000;}
+
+  /* Confidence slider */
+  .conf-wrap{display:flex;flex-direction:column;gap:4px;min-width:160px;}
+  .conf-wrap label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;}
+  .conf-wrap label span{color:var(--green);font-size:10px;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:2px;background:var(--border2);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--green);cursor:pointer;}
+
+  /* SGP toggle */
+  .sgp-wrap{display:flex;flex-direction:column;gap:4px;}
+  .sgp-wrap label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .toggle-row{display:flex;align-items:center;gap:7px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;cursor:pointer;user-select:none;transition:border-color 0.15s;}
+  .toggle-row.on{border-color:var(--purple);background:rgba(167,139,250,0.08);}
+  .toggle-track{width:26px;height:15px;background:var(--border2);border-radius:8px;position:relative;flex-shrink:0;transition:background 0.2s;}
+  .toggle-track.on{background:var(--purple);}
+  .toggle-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;background:#fff;border-radius:50%;transition:transform 0.2s;}
+  .toggle-track.on .toggle-thumb{transform:translateX(11px);}
+  .toggle-lbl{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);transition:color 0.2s;white-space:nowrap;}
+  .toggle-row.on .toggle-lbl{color:var(--purple);}
+
+  .btn{padding:7px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:#0a0c0f;}
+  .btn-primary:hover:not(:disabled){background:#d4eb2a;}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2);font-size:11px;}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm{padding:3px 8px;font-size:10px;}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,0.3);font-size:11px;padding:5px 10px;}
+
+  .layout{display:grid;grid-template-columns:360px 1fr;gap:14px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .panel-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--accent);}
+  .panel-body{overflow-y:auto;max-height:620px;}
+
+  .game-card{border-bottom:1px solid var(--border);padding:10px 14px;}
+  .game-card:last-child{border-bottom:none;}
+  .game-time{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:1px;}
+  .game-teams{font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace;}
+  .mkt-tabs{display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap;}
+  .mkt-tab{padding:2px 7px;border-radius:4px;font-size:9px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.12s;}
+  .mkt-tab.active{background:rgba(232,255,71,0.12);border-color:rgba(232,255,71,0.4);color:var(--accent);}
+  .mkt-tab.props-active{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.4);color:var(--purple);}
+  .game-matchup{display:flex;flex-direction:column;gap:4px;}
+
+  .bet-row{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;background:var(--surface2);}
+  .bet-row:hover{border-color:rgba(232,255,71,0.35);}
+  .bet-row.selected{border-color:var(--accent);background:rgba(232,255,71,0.07);}
+  .bet-row.selected-sgp{border-color:var(--purple);background:rgba(167,139,250,0.07);}
+  .bet-row.dimmed{opacity:0.25;pointer-events:none;}
+  .check-box{width:13px;height:13px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;}
+  .bet-row.selected .check-box{background:var(--accent);border-color:var(--accent);color:#000;}
+  .bet-row.selected-sgp .check-box{background:var(--purple);border-color:var(--purple);color:#000;}
+  .team-name{flex:1;font-size:11px;font-weight:500;}
+  .conf-pip{font-size:9px;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+  .conf-hi{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+  .conf-mid{background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);}
+  .conf-lo{background:rgba(255,107,53,0.1);color:var(--accent2);border:1px solid rgba(255,107,53,0.2);}
+  .mkt-badge{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap;}
+  .mkt-badge.prop{color:var(--purple);border-color:rgba(167,139,250,0.3);}
+  .odds-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:2px 5px;border-radius:4px;min-width:50px;text-align:center;}
+  .odds-pos{color:var(--green);background:rgba(34,197,94,0.1);}
+  .odds-neg{color:var(--accent2);background:rgba(255,107,53,0.1);}
+
+  .sgp-indicator{display:flex;align-items:center;gap:4px;margin-bottom:5px;padding:3px 6px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:4px;}
+  .sgp-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+  .sgp-lbl2{font-size:9px;font-family:'DM Mono',monospace;color:var(--purple);}
+  .mkt-divider{height:1px;background:var(--border);margin:4px 0;}
+  .mkt-section-label{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:2px 0 2px;}
+
+  .generate-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .sel-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  .sel-count strong{color:var(--accent);font-size:14px;}
+
+  /* Parlay table */
+  .parlay-table{width:100%;border-collapse:collapse;}
+  .parlay-table th{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:7px 11px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;}
+  .parlay-table td{padding:7px 11px;font-size:11px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .parlay-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .parlay-num{font-family:'DM Mono',monospace;color:var(--muted);font-size:10px;}
+  .legs-list{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px;}
+  .leg-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:9px;font-family:'DM Mono',monospace;white-space:nowrap;}
+  .leg-tag.sgp{border-color:rgba(167,139,250,0.3);color:var(--purple);}
+  .leg-tag.prop{border-color:rgba(167,139,250,0.2);color:rgba(167,139,250,0.8);}
+  .parlay-odds{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;}
+  .c-great{color:var(--accent);}
+  .c-good{color:var(--green);}
+  .c-ok{color:var(--accent2);}
+  .badges{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px;}
+  .badge{font-size:8px;border-radius:3px;padding:2px 5px;font-family:'DM Mono',monospace;}
+  .badge-leg{background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);}
+  .badge-sgp{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+  .badge-prop{background:rgba(167,139,250,0.08);color:var(--purple);border:1px solid rgba(167,139,250,0.15);}
+  .payout{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);}
+  .note{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  /* SGP confidence score */
+  .conf-score{display:flex;flex-direction:column;gap:2px;}
+  .conf-bar-wrap{width:60px;height:5px;background:var(--border2);border-radius:3px;overflow:hidden;}
+  .conf-bar{height:100%;border-radius:3px;transition:width 0.3s;}
+  .conf-num{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;}
+  .conf-label{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);}
+
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:12px;gap:6px;}
+  .empty-state .icon{font-size:26px;opacity:0.2;}
+  .count-badge{font-size:9px;background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);border-radius:4px;padding:2px 7px;font-family:'DM Mono',monospace;}
+  .data-note{background:rgba(232,255,71,0.04);border:1px solid rgba(232,255,71,0.12);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);line-height:1.7;}
+  .data-note span{color:var(--accent);}
+  .data-note .pn{color:var(--purple);}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}.panel-body{max-height:350px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">PARLAY<span>LAB</span></div>
+  <div class="header-right">MARCH MADNESS · SUNDAY MARCH 22, 2026<br>ROUND OF 32 · 8 GAMES</div>
+</div>
+
+<div class="main">
+  <div class="data-note">
+    📊 Game lines: <span>DraftKings via ESPN</span> — verify before placing.
+    <span class="pn">🎯 Props estimated from season averages — always confirm on DK/FD.</span>
+    Implied probability shown per leg. Confidence score (1–10) on SGP parlays reflects combined hit likelihood + correlation risk.
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill"><strong>8</strong> Games</div>
+    <div class="stat-pill"><strong id="s-bets">—</strong> Bets</div>
+    <div class="stat-pill"><strong id="s-sel">0</strong> Selected</div>
+    <div class="stat-pill"><strong id="s-parlays">0</strong> Parlays</div>
+  </div>
+
+  <div class="controls">
+    <!-- Row 1: Markets + legs + odds range + stake + SGP -->
+    <div class="ctrl-row">
+      <div class="cg">
+        <label>Markets</label>
+        <div class="tabs">
+          <button class="tab active" data-mkt="h2h" onclick="toggleMkt('h2h',this)">Moneyline</button>
+          <button class="tab active" data-mkt="spreads" onclick="toggleMkt('spreads',this)">Spread</button>
+          <button class="tab props-tab active" data-mkt="props" onclick="toggleMkt('props',this)">Player Pts</button>
+        </div>
+      </div>
+      <div class="cg"><label>Min Legs</label><input type="number" id="min-legs" value="2" min="2" max="8"></div>
+      <div class="cg"><label>Max Legs</label><input type="number" id="max-legs" value="3" min="2" max="10"></div>
+      <div class="cg"><label>Min Parlay Odds</label><input type="number" id="min-parlay" value="200"></div>
+      <div class="cg"><label>Max Parlay Odds</label><input type="number" id="max-parlay" value="1000" placeholder="e.g. 800"></div>
+      <div class="cg"><label>Stake ($)</label><input type="number" id="stake" value="10" min="1"></div>
+      <div class="sgp-wrap">
+        <label>Same-Game Parlays</label>
+        <div class="toggle-row" id="sgp-toggle" onclick="toggleSGP()">
+          <div class="toggle-track" id="sgp-track"><div class="toggle-thumb"></div></div>
+          <span class="toggle-lbl" id="sgp-lbl">OFF</span>
+        </div>
+      </div>
+    </div>
+    <!-- Row 2: Confidence filters -->
+    <div class="ctrl-row">
+      <div class="conf-wrap" style="min-width:200px">
+        <label>Min leg confidence (implied prob) <span id="conf-val">55%</span></label>
+        <input type="range" id="conf-slider" min="45" max="85" value="55" step="1" oninput="updateConfLabel()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
+        <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Quick presets</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-secondary btn-sm" onclick="setConf(50)">Any (50%+)</button>
+          <button class="btn btn-secondary btn-sm" onclick="setConf(60)">Solid (60%+)</button>
+          <button class="btn btn-secondary btn-sm" onclick="setConf(67)">High (67%+)</button>
+          <button class="btn btn-secondary btn-sm" onclick="setConf(75)">Lock (75%+)</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;margin-left:8px">
+        <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Odds equiv</span>
+        <span id="conf-odds-equiv" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--green);">-122 or better</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Games -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Today's Games</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-secondary btn-sm" onclick="selectAll()">All</button>
+            <button class="btn btn-secondary btn-sm" onclick="selectNone()">None</button>
+          </div>
+        </div>
+        <div class="panel-body" id="games-container"></div>
+      </div>
+    </div>
+
+    <!-- Parlays -->
+    <div>
+      <div class="generate-bar">
+        <div class="sel-count"><strong id="gen-sel">0</strong> selected</div>
+        <div style="font-size:10px;color:var(--purple);font-family:'DM Mono',monospace;display:none" id="sgp-info"></div>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" id="gen-btn" onclick="generateParlays()" disabled>⚡ Generate</button>
+        <button class="btn btn-danger" id="clear-btn" onclick="clearParlays()" style="display:none">Clear</button>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Parlays</span>
+          <span class="count-badge" id="parlay-badge" style="display:none"></span>
+        </div>
+        <div class="panel-body" id="parlays-container">
+          <div class="empty-state"><div class="icon">🏀</div><div>Select bets → Generate</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GAMES DATA ────────────────────────────────────────────────────────────────
+// Top 2 scorers per team only for props
+const GAMES = [
+  {
+    id:'g1',time:'12:10 PM ET',tv:'CBS',away:'Miami Hurricanes',home:'Purdue Boilermakers',seeds:'(7) vs (2)',
+    h2h:[{name:'Miami Hurricanes',odds:310},{name:'Purdue Boilermakers',odds:-400}],
+    spreads:[{name:'Miami Hurricanes',odds:-110,point:8.5},{name:'Purdue Boilermakers',odds:-110,point:-8.5}],
+    props:[
+      {name:'Zach Edey Over 19.5 Pts',odds:-115,line:19.5,dir:'Over',player:'Zach Edey',team:'Purdue'},
+      {name:'Zach Edey Under 19.5 Pts',odds:-105,line:19.5,dir:'Under',player:'Zach Edey',team:'Purdue'},
+      {name:'Braden Smith Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Braden Smith',team:'Purdue'},
+      {name:'Braden Smith Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Braden Smith',team:'Purdue'},
+      {name:'Malik Reneau Over 17.5 Pts',odds:-115,line:17.5,dir:'Over',player:'Malik Reneau',team:'Miami'},
+      {name:'Malik Reneau Under 17.5 Pts',odds:-105,line:17.5,dir:'Under',player:'Malik Reneau',team:'Miami'},
+      {name:'Tre Donaldson Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Tre Donaldson',team:'Miami'},
+      {name:'Tre Donaldson Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Tre Donaldson',team:'Miami'},
+    ]
+  },
+  {
+    id:'g2',time:'2:45 PM ET',tv:'CBS',away:'Kentucky Wildcats',home:'Iowa State Cyclones',seeds:'(7) vs (2)',
+    h2h:[{name:'Kentucky Wildcats',odds:190},{name:'Iowa State Cyclones',odds:-230}],
+    spreads:[{name:'Kentucky Wildcats',odds:-110,point:4.5},{name:'Iowa State Cyclones',odds:-110,point:-4.5}],
+    props:[
+      {name:'Otega Oweh Over 19.5 Pts',odds:-115,line:19.5,dir:'Over',player:'Otega Oweh',team:'Kentucky'},
+      {name:'Otega Oweh Under 19.5 Pts',odds:-105,line:19.5,dir:'Under',player:'Otega Oweh',team:'Kentucky'},
+      {name:'Collin Chandler Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Collin Chandler',team:'Kentucky'},
+      {name:'Collin Chandler Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Collin Chandler',team:'Kentucky'},
+      {name:'Killyan Toure Over 16.5 Pts',odds:-110,line:16.5,dir:'Over',player:'Killyan Toure',team:'Iowa State'},
+      {name:'Killyan Toure Under 16.5 Pts',odds:-110,line:16.5,dir:'Under',player:'Killyan Toure',team:'Iowa State'},
+      {name:'Milan Momcilovic Over 13.5 Pts',odds:-115,line:13.5,dir:'Over',player:'Milan Momcilovic',team:'Iowa State'},
+      {name:'Milan Momcilovic Under 13.5 Pts',odds:-105,line:13.5,dir:'Under',player:'Milan Momcilovic',team:'Iowa State'},
+    ]
+  },
+  {
+    id:'g3',time:'5:15 PM ET',tv:'CBS',away:"St. John's Red Storm",home:'Kansas Jayhawks',seeds:'(5) vs (4)',
+    h2h:[{name:"St. John's Red Storm",odds:-166},{name:'Kansas Jayhawks',odds:140}],
+    spreads:[{name:"St. John's Red Storm",odds:-110,point:-3.5},{name:'Kansas Jayhawks',odds:-110,point:3.5}],
+    props:[
+      {name:'Darryn Peterson Over 21.5 Pts',odds:-115,line:21.5,dir:'Over',player:'Darryn Peterson',team:'Kansas'},
+      {name:'Darryn Peterson Under 21.5 Pts',odds:-105,line:21.5,dir:'Under',player:'Darryn Peterson',team:'Kansas'},
+      {name:'Zuby Ejiofor Over 15.5 Pts',odds:-115,line:15.5,dir:'Over',player:'Zuby Ejiofor',team:"St. John's"},
+      {name:'Zuby Ejiofor Under 15.5 Pts',odds:-105,line:15.5,dir:'Under',player:'Zuby Ejiofor',team:"St. John's"},
+      {name:'RJ Luis Jr Over 14.5 Pts',odds:-110,line:14.5,dir:'Over',player:'RJ Luis Jr',team:"St. John's"},
+      {name:'RJ Luis Jr Under 14.5 Pts',odds:-110,line:14.5,dir:'Under',player:'RJ Luis Jr',team:"St. John's"},
+      {name:'Flory Bidunga Over 11.5 Pts',odds:-110,line:11.5,dir:'Over',player:'Flory Bidunga',team:'Kansas'},
+      {name:'Flory Bidunga Under 11.5 Pts',odds:-110,line:11.5,dir:'Under',player:'Flory Bidunga',team:'Kansas'},
+    ]
+  },
+  {
+    id:'g4',time:'6:10 PM ET',tv:'TNT',away:'Tennessee Volunteers',home:'Virginia Cavaliers',seeds:'(6) vs (3)',
+    h2h:[{name:'Tennessee Volunteers',odds:-118},{name:'Virginia Cavaliers',odds:-102}],
+    spreads:[{name:'Tennessee Volunteers',odds:-110,point:-1.5},{name:'Virginia Cavaliers',odds:-110,point:1.5}],
+    props:[
+      {name:'Trent Perry Over 15.5 Pts',odds:-115,line:15.5,dir:'Over',player:'Trent Perry',team:'Virginia'},
+      {name:'Trent Perry Under 15.5 Pts',odds:-105,line:15.5,dir:'Under',player:'Trent Perry',team:'Virginia'},
+      {name:'Blake Buchanan Over 12.5 Pts',odds:-110,line:12.5,dir:'Over',player:'Blake Buchanan',team:'Virginia'},
+      {name:'Blake Buchanan Under 12.5 Pts',odds:-110,line:12.5,dir:'Under',player:'Blake Buchanan',team:'Virginia'},
+      {name:'Chaz Lanier Over 16.5 Pts',odds:-110,line:16.5,dir:'Over',player:'Chaz Lanier',team:'Tennessee'},
+      {name:'Chaz Lanier Under 16.5 Pts',odds:-110,line:16.5,dir:'Under',player:'Chaz Lanier',team:'Tennessee'},
+      {name:'Igor Milicic Jr Over 12.5 Pts',odds:-115,line:12.5,dir:'Over',player:'Igor Milicic Jr',team:'Tennessee'},
+      {name:'Igor Milicic Jr Under 12.5 Pts',odds:-105,line:12.5,dir:'Under',player:'Igor Milicic Jr',team:'Tennessee'},
+    ]
+  },
+  {
+    id:'g5',time:'7:10 PM ET',tv:'TBS',away:'Iowa Hawkeyes',home:'Florida Gators',seeds:'(9) vs (1)',
+    h2h:[{name:'Iowa Hawkeyes',odds:440},{name:'Florida Gators',odds:-600}],
+    spreads:[{name:'Iowa Hawkeyes',odds:-110,point:11.5},{name:'Florida Gators',odds:-110,point:-11.5}],
+    props:[
+      {name:'Walter Clayton Jr Over 18.5 Pts',odds:-115,line:18.5,dir:'Over',player:'Walter Clayton Jr',team:'Florida'},
+      {name:'Walter Clayton Jr Under 18.5 Pts',odds:-105,line:18.5,dir:'Under',player:'Walter Clayton Jr',team:'Florida'},
+      {name:'Alijah Martin Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Alijah Martin',team:'Florida'},
+      {name:'Alijah Martin Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Alijah Martin',team:'Florida'},
+      {name:'Payton Sandfort Over 14.5 Pts',odds:-110,line:14.5,dir:'Over',player:'Payton Sandfort',team:'Iowa'},
+      {name:'Payton Sandfort Under 14.5 Pts',odds:-110,line:14.5,dir:'Under',player:'Payton Sandfort',team:'Iowa'},
+      {name:'Josh Dix Over 12.5 Pts',odds:-110,line:12.5,dir:'Over',player:'Josh Dix',team:'Iowa'},
+      {name:'Josh Dix Under 12.5 Pts',odds:-110,line:12.5,dir:'Under',player:'Josh Dix',team:'Iowa'},
+    ]
+  },
+  {
+    id:'g6',time:'7:50 PM ET',tv:'truTV',away:'Utah State Aggies',home:'Arizona Wildcats',seeds:'(9) vs (1)',
+    h2h:[{name:'Utah State Aggies',odds:550},{name:'Arizona Wildcats',odds:-800}],
+    spreads:[{name:'Utah State Aggies',odds:-110,point:12.5},{name:'Arizona Wildcats',odds:-118,point:-12.5}],
+    props:[
+      {name:'Brayden Burries Over 16.5 Pts',odds:-115,line:16.5,dir:'Over',player:'Brayden Burries',team:'Arizona'},
+      {name:'Brayden Burries Under 16.5 Pts',odds:-105,line:16.5,dir:'Under',player:'Brayden Burries',team:'Arizona'},
+      {name:'Koa Peat Over 13.5 Pts',odds:-115,line:13.5,dir:'Over',player:'Koa Peat',team:'Arizona'},
+      {name:'Koa Peat Under 13.5 Pts',odds:-105,line:13.5,dir:'Under',player:'Koa Peat',team:'Arizona'},
+      {name:'Mason Falslev Over 14.5 Pts',odds:-110,line:14.5,dir:'Over',player:'Mason Falslev',team:'Utah State'},
+      {name:'Mason Falslev Under 14.5 Pts',odds:-110,line:14.5,dir:'Under',player:'Mason Falslev',team:'Utah State'},
+      {name:'Great Osobor Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Great Osobor',team:'Utah State'},
+      {name:'Great Osobor Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Great Osobor',team:'Utah State'},
+    ]
+  },
+  {
+    id:'g7',time:'8:45 PM ET',tv:'TNT',away:'UCLA Bruins',home:'UConn Huskies',seeds:'(7) vs (2)',
+    h2h:[{name:'UCLA Bruins',odds:164},{name:'UConn Huskies',odds:-198}],
+    spreads:[{name:'UCLA Bruins',odds:-110,point:4.5},{name:'UConn Huskies',odds:-110,point:-4.5}],
+    props:[
+      {name:'Liam McNeeley Over 14.5 Pts',odds:-115,line:14.5,dir:'Over',player:'Liam McNeeley',team:'UConn'},
+      {name:'Liam McNeeley Under 14.5 Pts',odds:-105,line:14.5,dir:'Under',player:'Liam McNeeley',team:'UConn'},
+      {name:'Aidan Mahaney Over 15.5 Pts',odds:-110,line:15.5,dir:'Over',player:'Aidan Mahaney',team:'UCLA'},
+      {name:'Aidan Mahaney Under 15.5 Pts',odds:-110,line:15.5,dir:'Under',player:'Aidan Mahaney',team:'UCLA'},
+      {name:'Eric Dailey Jr Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'Eric Dailey Jr',team:'UCLA'},
+      {name:'Eric Dailey Jr Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'Eric Dailey Jr',team:'UCLA'},
+      {name:'Solo Ball Over 12.5 Pts',odds:-115,line:12.5,dir:'Over',player:'Solo Ball',team:'UConn'},
+      {name:'Solo Ball Under 12.5 Pts',odds:-105,line:12.5,dir:'Under',player:'Solo Ball',team:'UConn'},
+    ]
+  },
+  {
+    id:'g8',time:'9:45 PM ET',tv:'TBS',away:'Texas Tech Red Raiders',home:'Alabama Crimson Tide',seeds:'(5) vs (4)',
+    h2h:[{name:'Texas Tech Red Raiders',odds:-118},{name:'Alabama Crimson Tide',odds:-102}],
+    spreads:[{name:'Texas Tech Red Raiders',odds:-115,point:-1.5},{name:'Alabama Crimson Tide',odds:-105,point:1.5}],
+    props:[
+      {name:'Mark Sears Over 18.5 Pts',odds:-115,line:18.5,dir:'Over',player:'Mark Sears',team:'Alabama'},
+      {name:'Mark Sears Under 18.5 Pts',odds:-105,line:18.5,dir:'Under',player:'Mark Sears',team:'Alabama'},
+      {name:'Mouhamed Dioubate Over 11.5 Pts',odds:-110,line:11.5,dir:'Over',player:'Mouhamed Dioubate',team:'Alabama'},
+      {name:'Mouhamed Dioubate Under 11.5 Pts',odds:-110,line:11.5,dir:'Under',player:'Mouhamed Dioubate',team:'Alabama'},
+      {name:'Darrion Williams Over 14.5 Pts',odds:-110,line:14.5,dir:'Over',player:'Darrion Williams',team:'Texas Tech'},
+      {name:'Darrion Williams Under 14.5 Pts',odds:-110,line:14.5,dir:'Under',player:'Darrion Williams',team:'Texas Tech'},
+      {name:'JT Toppin Over 13.5 Pts',odds:-110,line:13.5,dir:'Over',player:'JT Toppin',team:'Texas Tech'},
+      {name:'JT Toppin Under 13.5 Pts',odds:-110,line:13.5,dir:'Under',player:'JT Toppin',team:'Texas Tech'},
+    ]
+  }
+];
+
+const MKT_LABELS = {h2h:'ML', spreads:'ATS', props:'PTS'};
+let activeMkts = new Set(['h2h','spreads','props']);
+let sgpEnabled = false;
+let selectedBets = new Set();
+let selectedBetData = {};
+let gameActiveMkt = {};
+let generatedParlays = [];
+
+GAMES.forEach(g => gameActiveMkt[g.id] = 'h2h');
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function toDecimal(o){return o>=100?o/100+1:100/Math.abs(o)+1;}
+function toAmerican(d){return d>=2?Math.round((d-1)*100):Math.round(-100/(d-1));}
+
+// Implied probability (no-vig approximate)
+function impliedProb(odds) {
+  if(odds >= 100) return 100/(odds+100);
+  return Math.abs(odds)/(Math.abs(odds)+100);
+}
+
+function probToMinOdds(pct) {
+  // Convert minimum probability % to minimum odds threshold
+  // pct = 0.55 means we want legs with at least 55% implied prob
+  if(pct <= 0.5) return -10000;
+  return -Math.round(pct/(1-pct)*100);
+}
+
+function confColor(pct) {
+  if(pct >= 0.70) return 'var(--green)';
+  if(pct >= 0.60) return 'var(--accent)';
+  return 'var(--accent2)';
+}
+
+function confClass(pct) {
+  if(pct >= 0.70) return 'conf-hi';
+  if(pct >= 0.58) return 'conf-mid';
+  return 'conf-lo';
+}
+
+function updateConfLabel() {
+  const val = parseInt(document.getElementById('conf-slider').value);
+  document.getElementById('conf-val').textContent = val + '%';
+  // Show equivalent odds
+  const minOdds = probToMinOdds(val/100);
+  document.getElementById('conf-odds-equiv').textContent = minOdds <= -10000 ? 'Any odds' : minOdds + ' or better';
+  renderGames();
+}
+
+function setConf(pct) {
+  document.getElementById('conf-slider').value = pct;
+  updateConfLabel();
+}
+
+// ── SGP CONFIDENCE SCORE ──────────────────────────────────────────────────────
+// Score 1-10 based on:
+// 1. Combined implied probability of all legs (main driver)
+// 2. Penalty for same-game correlation risk (props from same game as spread)
+// 3. Penalty for number of legs (more legs = harder)
+// 4. Bonus for heavily favored ML legs
+
+function sgpConfidenceScore(combo, gmap) {
+  // Combined implied prob (multiply individual probs)
+  const combinedProb = combo.reduce((a, b) => a * impliedProb(b.odds), 1);
+
+  // Base score from combined probability (0-10 scale)
+  // 50% combined = 5, 30% = 3, 70% = 7, etc.
+  let score = combinedProb * 10;
+
+  // Leg count penalty — each extra leg beyond 2 reduces confidence
+  const extraLegs = Math.max(0, combo.length - 2);
+  score -= extraLegs * 0.4;
+
+  // Same-game correlation penalty
+  // Props + spread from same game = correlated but not perfectly
+  // Props + ML from same team = positively correlated (good)
+  // Props from different outcomes of same game = risky
+  Object.values(gmap).forEach(legs => {
+    if(legs.length < 2) return;
+    const hasML = legs.some(l => l.market === 'h2h');
+    const hasProp = legs.some(l => l.isProp);
+    const hasSpread = legs.some(l => l.market === 'spreads');
+
+    if(hasML && hasProp) {
+      // ML + player prop from same game: check if same team
+      const mlLeg = legs.find(l => l.market === 'h2h');
+      const propLegs = legs.filter(l => l.isProp);
+      propLegs.forEach(pl => {
+        const game = GAMES.find(g => g.id === pl.gameId);
+        const mlTeamIsHome = game && mlLeg.name === game.home;
+        // Same team ML + player scoring prop: positively correlated
+        if(pl.name && mlLeg.name && pl.team === mlLeg.name) {
+          score += 0.3; // slight boost
+        } else {
+          score -= 0.2; // slight penalty for mixed correlation
+        }
+      });
+    }
+    if(hasSpread && hasProp) score -= 0.3; // spread + prop = moderate correlation risk
+    if(hasML && hasSpread) score -= 0.5; // ML + spread from same game: redundant/contradictory
+  });
+
+  // Clamp to 1-10 and round to 1 decimal
+  score = Math.max(1, Math.min(10, score));
+  return Math.round(score * 10) / 10;
+}
+
+function scoreLabel(s) {
+  if(s >= 7.5) return {text:'Strong', color:'var(--green)'};
+  if(s >= 6) return {text:'Solid', color:'var(--accent)'};
+  if(s >= 4.5) return {text:'Moderate', color:'var(--accent2)'};
+  return {text:'Risky', color:'var(--red)'};
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  renderGames();
+  let bc = 0;
+  GAMES.forEach(g => activeMkts.forEach(mkt => { if(g[mkt]) bc += g[mkt].length; }));
+  document.getElementById('s-bets').textContent = bc;
+}
+
+function toggleMkt(mkt, btn) {
+  if(activeMkts.has(mkt)) { if(activeMkts.size===1) return; activeMkts.delete(mkt); btn.classList.remove('active'); }
+  else { activeMkts.add(mkt); btn.classList.add('active'); }
+  renderGames();
+}
+
+function toggleSGP() {
+  sgpEnabled = !sgpEnabled;
+  document.getElementById('sgp-track').classList.toggle('on', sgpEnabled);
+  document.getElementById('sgp-toggle').classList.toggle('on', sgpEnabled);
+  document.getElementById('sgp-lbl').textContent = sgpEnabled ? 'ON' : 'OFF';
+  renderGames(); updateStats();
+}
+
+// ── RENDER GAMES ──────────────────────────────────────────────────────────────
+function renderGames() {
+  const minConfPct = parseInt(document.getElementById('conf-slider').value) / 100;
+  const container = document.getElementById('games-container');
+
+  container.innerHTML = GAMES.map(g => {
+    if(sgpEnabled) {
+      const avail = Array.from(activeMkts).filter(m => g[m] && g[m].length);
+      const act = gameActiveMkt[g.id] || avail[0] || 'h2h';
+      const mktTabsHtml = avail.map(m => {
+        const isAct = m === act;
+        const cls = m==='props' ? (isAct?'mkt-tab props-active':'mkt-tab') : (isAct?'mkt-tab active':'mkt-tab');
+        return `<button class="${cls}" onclick="setGameMkt('${g.id}','${m}',this)">${MKT_LABELS[m]}</button>`;
+      }).join('');
+      const rows = (g[act]||[]).map(o => buildRow(g,o,act,minConfPct)).join('');
+      const sgpCount = Array.from(selectedBets).filter(id => selectedBetData[id]?.gameId===g.id).length;
+      const sgpInd = `<div id="sgpind-${g.id}" class="${sgpCount>1?'sgp-indicator':''}">${sgpCount>1?`<div class="sgp-dot"></div><span class="sgp-lbl2">${sgpCount} legs (SGP)</span>`:''}</div>`;
+      return `<div class="game-card" id="gc-${g.id}">
+        <div class="game-time">🏀 ${g.time} · ${g.tv} · ${g.seeds}</div>
+        <div class="game-teams">${g.away} @ ${g.home}</div>
+        ${sgpInd}
+        <div class="mkt-tabs">${mktTabsHtml}</div>
+        <div class="game-matchup" id="gm-${g.id}">${rows}</div>
+      </div>`;
+    } else {
+      const sections = Array.from(activeMkts).filter(m=>g[m]&&g[m].length).map((m,i)=> {
+        return `${i>0?'<div class="mkt-divider"></div>':''}<div class="mkt-section-label" style="${m==='props'?'color:rgba(167,139,250,0.7)':''}">${MKT_LABELS[m]}</div>` +
+          g[m].map(o=>buildRow(g,o,m,minConfPct)).join('');
+      }).join('');
+      return `<div class="game-card">
+        <div class="game-time">🏀 ${g.time} · ${g.tv} · ${g.seeds}</div>
+        <div class="game-teams">${g.away} @ ${g.home}</div>
+        <div class="game-matchup">${sections}</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function buildRow(g, o, mkt, minConfPct) {
+  const ip = impliedProb(o.odds);
+  const meetsConf = ip >= minConfPct;
+  const id = `${g.id}||${mkt}||${o.name}||${o.odds}` + (o.point!==undefined?`||${o.point}`:'');
+  const sel = selectedBets.has(id);
+  const selClass = sel ? (sgpEnabled?'selected-sgp':'selected') : '';
+  const pos = o.odds >= 0;
+  const pts = o.point!==undefined ? ` ${o.point>0?'+':''}${o.point}` : '';
+  const pctStr = Math.round(ip*100) + '%';
+  const eid = id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `<div class="bet-row ${selClass} ${!meetsConf?'dimmed':''}" onclick="toggleBet(this,'${eid}','${g.id}','${mkt}',${o.odds})">
+    <div class="check-box">${sel?'✓':''}</div>
+    <div class="team-name">${o.name}${pts}</div>
+    <span class="conf-pip ${confClass(ip)}">${pctStr}</span>
+    <span class="mkt-badge ${mkt==='props'?'prop':''}">${MKT_LABELS[mkt]}</span>
+    <div class="odds-badge ${pos?'odds-pos':'odds-neg'}">${pos?'+':''}${o.odds}</div>
+  </div>`;
+}
+
+function setGameMkt(gid, mkt, btn) {
+  gameActiveMkt[gid] = mkt;
+  const card = document.getElementById(`gc-${gid}`);
+  if(card) card.querySelectorAll('.mkt-tab').forEach(t => t.classList.remove('active','props-active'));
+  btn.classList.add(mkt==='props'?'props-active':'active');
+  const g = GAMES.find(x=>x.id===gid);
+  const minConfPct = parseInt(document.getElementById('conf-slider').value)/100;
+  const el = document.getElementById(`gm-${gid}`);
+  if(el&&g) el.innerHTML=(g[mkt]||[]).map(o=>buildRow(g,o,mkt,minConfPct)).join('');
+}
+
+function toggleBet(el, id, gameId, mkt, odds) {
+  const selClass = sgpEnabled?'selected-sgp':'selected';
+  if(selectedBets.has(id)) {
+    selectedBets.delete(id); delete selectedBetData[id];
+    el.classList.remove('selected','selected-sgp'); el.querySelector('.check-box').textContent='';
+  } else {
+    selectedBets.add(id);
+    const parts=id.split('||');
+    // Find team for prop legs
+    const g = GAMES.find(x=>x.id===gameId);
+    const propData = mkt==='props' ? g?.props?.find(p=>p.name===parts[2]) : null;
+    selectedBetData[id]={id,gameId,market:mkt,name:parts[2],odds,point:parts[4],isProp:mkt==='props',team:propData?.team||null};
+    el.classList.add(selClass); el.querySelector('.check-box').textContent='✓';
+  }
+  if(sgpEnabled) updateSGPIndicator(gameId);
+  updateStats();
+}
+
+function updateSGPIndicator(gameId) {
+  const el=document.getElementById(`sgpind-${gameId}`);
+  if(!el) return;
+  const cnt=Array.from(selectedBets).filter(id=>selectedBetData[id]?.gameId===gameId).length;
+  el.className=cnt>1?'sgp-indicator':'';
+  el.innerHTML=cnt>1?`<div class="sgp-dot"></div><span class="sgp-lbl2">${cnt} legs (SGP)</span>`:'';
+}
+
+function updateStats() {
+  const n=selectedBets.size;
+  document.getElementById('s-sel').textContent=n;
+  document.getElementById('gen-sel').textContent=n;
+  document.getElementById('gen-btn').disabled=n<2;
+  const info=document.getElementById('sgp-info');
+  if(sgpEnabled) {
+    const gmap={}; Object.values(selectedBetData).forEach(b=>{gmap[b.gameId]=(gmap[b.gameId]||0)+1;});
+    const sg=Object.values(gmap).filter(c=>c>1).length;
+    info.textContent=sg>0?`${sg} SGP game${sg>1?'s':''}`:''; info.style.display=sg>0?'block':'none';
+  } else info.style.display='none';
+}
+
+function selectAll() {
+  document.querySelectorAll('.bet-row:not(.dimmed)').forEach(el=>{
+    const m=el.getAttribute('onclick').match(/toggleBet\(this,'([^']+)','([^']+)','([^']+)',(-?\d+)\)/);
+    if(!m) return;
+    const id=m[1].replace(/\\'/g,"'"),gameId=m[2],mkt=m[3],odds=parseInt(m[4]);
+    if(selectedBets.has(id)) return;
+    selectedBets.add(id);
+    const parts=id.split('||');
+    const g=GAMES.find(x=>x.id===gameId);
+    const propData=mkt==='props'?g?.props?.find(p=>p.name===parts[2]):null;
+    selectedBetData[id]={id,gameId,market:mkt,name:parts[2],odds,point:parts[4],isProp:mkt==='props',team:propData?.team||null};
+    el.classList.add(sgpEnabled?'selected-sgp':'selected'); el.querySelector('.check-box').textContent='✓';
+  });
+  GAMES.forEach(g=>{if(sgpEnabled) updateSGPIndicator(g.id);});
+  updateStats();
+}
+
+function selectNone() {
+  selectedBets.clear(); selectedBetData={};
+  document.querySelectorAll('.bet-row.selected,.bet-row.selected-sgp').forEach(el=>{
+    el.classList.remove('selected','selected-sgp'); el.querySelector('.check-box').textContent='';
+  });
+  GAMES.forEach(g=>updateSGPIndicator(g.id));
+  updateStats();
+}
+
+// ── COMBINATIONS ──────────────────────────────────────────────────────────────
+function combos(arr,k){
+  if(k===1) return arr.map(x=>[x]);
+  if(k===arr.length) return [arr];
+  const r=[];
+  for(let i=0;i<=arr.length-k;i++) combos(arr.slice(i+1),k-1).forEach(c=>r.push([arr[i],...c]));
+  return r;
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+function generateParlays() {
+  const minL=parseInt(document.getElementById('min-legs').value)||2;
+  const maxL=parseInt(document.getElementById('max-legs').value)||3;
+  const minPO=parseInt(document.getElementById('min-parlay').value)||200;
+  const maxPO=parseInt(document.getElementById('max-parlay').value)||99999;
+  const stake=parseFloat(document.getElementById('stake').value)||10;
+  const minConfPct=parseInt(document.getElementById('conf-slider').value)/100;
+  const bets=Object.values(selectedBetData);
+
+  generatedParlays=[];
+
+  for(let k=minL;k<=maxL;k++) {
+    combos(bets,k).forEach(combo=>{
+      // Confidence filter — every leg must meet minimum implied prob
+      if(combo.some(b => impliedProb(b.odds) < minConfPct)) return;
+
+      const gmap={};
+      combo.forEach(b=>{if(!gmap[b.gameId]) gmap[b.gameId]=[]; gmap[b.gameId].push(b);});
+
+      if(!sgpEnabled && Object.values(gmap).some(legs=>legs.length>1)) return;
+
+      // Conflict checks
+      let conflict=false;
+      if(sgpEnabled) {
+        Object.values(gmap).forEach(legs=>{
+          if(legs.length<2) return;
+          const byMkt={};
+          legs.forEach(l=>{if(!byMkt[l.market]) byMkt[l.market]=[]; byMkt[l.market].push(l);});
+          Object.values(byMkt).forEach(ml=>{
+            if(ml.length<2) return;
+            ml.forEach((a,i)=>ml.slice(i+1).forEach(b=>{
+              if(a.market==='h2h') conflict=true;
+              if(!a.isProp&&!b.isProp&&a.point!==undefined&&b.point!==undefined&&Math.abs(parseFloat(a.point))===Math.abs(parseFloat(b.point))&&a.name!==b.name) conflict=true;
+              if(a.isProp&&b.isProp) {
+                const aBase=a.name.replace(/ Over .+| Under .+/,'');
+                const bBase=b.name.replace(/ Over .+| Under .+/,'');
+                if(aBase===bBase) conflict=true;
+              }
+            }));
+          });
+        });
+      }
+      if(conflict) return;
+
+      const dec=combo.reduce((a,b)=>a*toDecimal(b.odds),1);
+      const am=toAmerican(dec);
+      if(am < minPO || am > maxPO) return;
+
+      const hasSgp=Object.values(gmap).some(l=>l.length>1);
+      const hasProp=combo.some(b=>b.isProp);
+      const confScore = hasSgp ? sgpConfidenceScore(combo, gmap) : null;
+
+      generatedParlays.push({combo,am,payout:((dec-1)*stake).toFixed(2),hasSgp,hasProp,gmap,confScore});
+    });
+  }
+
+  // Sort: SGP parlays by confidence score desc, others by odds desc
+  generatedParlays.sort((a,b)=>{
+    if(a.hasSgp && b.hasSgp) return (b.confScore||0)-(a.confScore||0);
+    if(a.hasSgp) return -1;
+    if(b.hasSgp) return 1;
+    return b.am-a.am;
+  });
+
+  renderParlays(stake);
+  document.getElementById('s-parlays').textContent=generatedParlays.length;
+  document.getElementById('clear-btn').style.display='inline-block';
+  const badge=document.getElementById('parlay-badge');
+  badge.textContent=`${generatedParlays.length} parlays`;
+  badge.style.display='inline-block';
+}
+
+function renderParlays(stake) {
+  const container=document.getElementById('parlays-container');
+  if(!generatedParlays.length) {
+    container.innerHTML='<div class="empty-state"><div class="icon">🎲</div><div>No parlays met criteria — try adjusting filters</div></div>';
+    return;
+  }
+  const disp=generatedParlays.slice(0,500);
+  container.innerHTML=`<table class="parlay-table">
+    <thead><tr><th>#</th><th>Type</th><th>Selections</th><th>Odds</th><th>Confidence</th><th>Payout ($${stake})</th></tr></thead>
+    <tbody>${disp.map((p,i)=>{
+      const cls=p.am>=500?'c-great':p.am>=300?'c-good':'c-ok';
+      const legs=p.combo.map(b=>{
+        const isSgpLeg=p.gmap[b.gameId]?.length>1;
+        const pts=b.point?` ${parseFloat(b.point)>0?'+':''}${b.point}`:'';
+        const ip=impliedProb(b.odds);
+        const tagCls=isSgpLeg?'sgp':b.isProp?'prop':'';
+        return `<span class="leg-tag ${tagCls}" title="${Math.round(ip*100)}% implied prob">${b.name}${pts} <span style="opacity:0.45">${MKT_LABELS[b.market]}</span> (${b.odds>=0?'+':''}${b.odds})</span>`;
+      }).join('');
+
+      // Combined implied probability of all legs
+      const combinedIP = p.combo.reduce((a,b)=>a*impliedProb(b.odds),1);
+      const combinedIPStr = Math.round(combinedIP*100)+'%';
+
+      // Confidence score cell
+      let confCell = `<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${combinedIPStr} combined</span>`;
+      if(p.confScore !== null) {
+        const sl = scoreLabel(p.confScore);
+        const barWidth = Math.round(p.confScore*10);
+        confCell = `<div class="conf-score">
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="conf-num" style="color:${sl.color}">${p.confScore}</span>
+            <span style="font-size:9px;color:${sl.color};font-family:'DM Mono',monospace">/10 · ${sl.text}</span>
+          </div>
+          <div class="conf-bar-wrap"><div class="conf-bar" style="width:${barWidth}%;background:${sl.color}"></div></div>
+          <span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">${combinedIPStr} combined prob</span>
+        </div>`;
+      }
+
+      const notes=[];
+      if(p.hasSgp) notes.push('SGP — confirm odds w/ book');
+      if(p.hasProp) notes.push('Props estimated — verify on DK/FD');
+
+      return `<tr>
+        <td class="parlay-num">${i+1}</td>
+        <td><div class="badges">
+          <span class="badge badge-leg">${p.combo.length}-leg</span>
+          ${p.hasSgp?'<span class="badge badge-sgp">SGP</span>':''}
+          ${p.hasProp?'<span class="badge badge-prop">PROP</span>':''}
+        </div></td>
+        <td><div class="legs-list">${legs}</div>${notes.length?`<div class="note">⚠ ${notes.join(' · ')}</div>`:''}</td>
+        <td><span class="parlay-odds ${cls}">+${p.am}</span></td>
+        <td>${confCell}</td>
+        <td class="payout">+$${p.payout}</td>
+      </tr>`;
+    }).join('')}</tbody></table>
+    ${generatedParlays.length>500?`<div style="padding:8px 11px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">Showing 500 of ${generatedParlays.length}</div>`:''}`;
+}
+
+function clearParlays() {
+  generatedParlays=[];
+  document.getElementById('parlays-container').innerHTML='<div class="empty-state"><div class="icon">🏀</div><div>Select bets → Generate</div></div>';
+  document.getElementById('s-parlays').textContent='0';
+  document.getElementById('clear-btn').style.display='none';
+  document.getElementById('parlay-badge').style.display='none';
+}
+
+init();
+</script>
+</body>
+</html>
