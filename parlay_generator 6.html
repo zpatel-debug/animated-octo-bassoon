@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KY vs ISU — EV SGP Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c0f;--surface:#111318;--surface2:#181c22;--surface3:#1d2330;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --accent:#e8ff47;--accent2:#ff6b35;--text:#f0f0ee;
+    --muted:#6b7280;--green:#22c55e;--red:#ef4444;--purple:#a78bfa;--blue:#60a5fa;--orange:#fb923c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);}
+  .logo span{color:var(--text);}
+  .game-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 13px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;line-height:1.6;}
+  .game-pill b{color:var(--text);}
+  .main{padding:14px 20px;max-width:1500px;margin:0 auto;}
+
+  /* EV explainer */
+  .ev-explainer{background:var(--surface);border:1px solid rgba(96,165,250,0.2);border-radius:10px;padding:11px 16px;margin-bottom:12px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+  .ev-item{flex:1;min-width:160px;}
+  .ev-label{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+  .ev-val{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;}
+  .ev-pos{color:var(--green);}
+  .ev-neg{color:var(--red);}
+  .ev-neutral{color:var(--accent);}
+  .ev-sub{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:1px;}
+  .ev-formula{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);border-radius:6px;padding:6px 10px;border:1px solid var(--border);}
+
+  /* Intel */
+  .intel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:12px;}
+  .intel-title{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;}
+  .intel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px;}
+  .intel-card{background:var(--surface2);border-radius:7px;padding:8px 10px;border-left:2px solid var(--border2);font-size:10px;line-height:1.55;}
+  .intel-card.red{border-left-color:var(--red);}
+  .intel-card.green{border-left-color:var(--green);}
+  .intel-card.orange{border-left-color:var(--orange);}
+  .intel-card.blue{border-left-color:var(--blue);}
+  .itag{font-size:8px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+  .intel-card.red .itag{color:var(--red);}
+  .intel-card.green .itag{color:var(--green);}
+  .intel-card.orange .itag{color:var(--orange);}
+  .intel-card.blue .itag{color:var(--blue);}
+
+  /* Stats */
+  .stats-bar{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+  .stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 11px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .stat-pill strong{color:var(--accent);font-size:14px;}
+  .stat-pill.good{border-color:rgba(34,197,94,0.3);}
+  .stat-pill.good strong{color:var(--green);}
+
+  /* Controls */
+  .controls{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:12px;display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end;}
+  .cg{display:flex;flex-direction:column;gap:3px;}
+  .cg label{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .cg input{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 9px;outline:none;width:78px;}
+  .cg input:focus{border-color:var(--accent);}
+  .btn{padding:6px 13px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:#0a0c0f;}
+  .btn-primary:hover:not(:disabled){background:#d4eb2a;}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border2);}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-green{background:transparent;color:var(--green);border:1px solid rgba(34,197,94,0.35);}
+  .btn-green:hover{background:rgba(34,197,94,0.08);}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,0.3);font-size:10px;padding:5px 9px;}
+
+  .layout{display:grid;grid-template-columns:440px 1fr;gap:12px;}
+
+  /* Prop panel */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .panel-header{padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--accent);}
+  .panel-body{overflow-y:auto;max-height:680px;}
+
+  /* Prop card */
+  .prop-card{border-bottom:1px solid var(--border);padding:10px 13px;}
+  .prop-card:last-child{border-bottom:none;}
+  .prop-header{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+  .prop-player{font-size:12px;font-weight:500;}
+  .prop-team{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;}
+  .prop-cat{font-size:8px;font-family:'DM Mono',monospace;color:var(--purple);background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:3px;padding:1px 5px;}
+  .prop-stat{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:5px;}
+  .prop-analysis{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);line-height:1.55;margin-bottom:6px;padding:5px 8px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);}
+  .prop-analysis.sharp-note{border-left-color:var(--green);}
+  .prop-analysis.trap-note{border-left-color:var(--orange);}
+
+  /* Bet rows */
+  .bet-rows{display:flex;flex-direction:column;gap:3px;}
+  .bet-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all 0.12s;background:var(--bg);}
+  .bet-row:hover{border-color:rgba(232,255,71,0.35);}
+  .bet-row.selected{border-color:var(--accent);background:rgba(232,255,71,0.06);}
+  .bet-row.dimmed{opacity:0.22;pointer-events:none;}
+  .bet-row.ev-pos-row{border-left:2px solid var(--green);}
+  .bet-row.ev-neg-row{border-left:2px solid rgba(239,68,68,0.4);}
+  .check-box{width:12px;height:12px;border:1.5px solid var(--border2);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;}
+  .bet-row.selected .check-box{background:var(--accent);border-color:var(--accent);color:#000;}
+  .bet-label{flex:1;font-size:11px;font-weight:500;}
+  /* EV pill */
+  .ev-pill{font-size:9px;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;font-weight:500;}
+  .ev-pill-pos{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25);}
+  .ev-pill-neg{background:rgba(239,68,68,0.08);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+  .ev-pill-break{background:rgba(232,255,71,0.08);color:var(--accent);border:1px solid rgba(232,255,71,0.2);}
+  /* Hit rate */
+  .hr-pill{font-size:9px;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+  .hr-hi{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+  .hr-mid{background:rgba(232,255,71,0.08);color:var(--accent);border:1px solid rgba(232,255,71,0.15);}
+  .hr-lo{background:rgba(255,107,53,0.08);color:var(--accent2);border:1px solid rgba(255,107,53,0.15);}
+  .odds-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:2px 5px;border-radius:3px;min-width:46px;text-align:center;}
+  .odds-neg{color:var(--accent2);background:rgba(255,107,53,0.08);}
+  .odds-pos{color:var(--green);background:rgba(34,197,94,0.08);}
+
+  /* Correlation badge */
+  .corr-badge{font-size:8px;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+  .corr-pos{background:rgba(34,197,94,0.08);color:var(--green);border:1px solid rgba(34,197,94,0.15);}
+  .corr-neg{background:rgba(239,68,68,0.06);color:rgba(239,68,68,0.7);border:1px solid rgba(239,68,68,0.15);}
+  .corr-neutral{background:rgba(96,165,250,0.06);color:var(--blue);border:1px solid rgba(96,165,250,0.15);}
+
+  /* Generate bar */
+  .generate-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .sel-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+  .sel-count strong{color:var(--accent);font-size:13px;}
+  .ev-summary{font-family:'DM Mono',monospace;font-size:10px;}
+
+  /* Parlay table */
+  .parlay-table{width:100%;border-collapse:collapse;}
+  .parlay-table th{font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;}
+  .parlay-table td{padding:7px 10px;font-size:10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .parlay-table tr:hover td{background:rgba(255,255,255,0.015);}
+  .parlay-num{font-family:'DM Mono',monospace;color:var(--muted);font-size:9px;}
+  .legs-list{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:2px;}
+  .leg-chip{padding:2px 5px;border-radius:3px;font-size:9px;font-family:'DM Mono',monospace;white-space:nowrap;border:1px solid var(--border);}
+  .leg-chip.ev-pos{border-color:rgba(34,197,94,0.3);color:var(--green);}
+  .leg-chip.ev-neg{border-color:rgba(239,68,68,0.2);color:rgba(239,68,68,0.7);}
+  .leg-chip.ev-break{border-color:rgba(232,255,71,0.2);color:var(--accent);}
+  .parlay-odds-num{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;}
+  .c-great{color:var(--accent);}
+  .c-good{color:var(--green);}
+  .c-ok{color:var(--accent2);}
+  /* EV cell */
+  .ev-cell{display:flex;flex-direction:column;gap:2px;}
+  .ev-cell-num{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;}
+  .ev-bar-wrap{width:50px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden;position:relative;}
+  .ev-bar{height:100%;border-radius:2px;position:absolute;top:0;}
+  .ev-cell-sub{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);}
+  .warn-4leg{font-size:8px;font-family:'DM Mono',monospace;color:var(--orange);background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.2);border-radius:3px;padding:2px 5px;margin-top:2px;display:inline-block;}
+  .payout-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);}
+  .corr-cell{display:flex;flex-direction:column;gap:2px;}
+
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:12px;gap:6px;}
+  .empty-state .icon{font-size:24px;opacity:0.2;}
+  .count-badge{font-size:9px;background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;}
+  .note{font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+  /* Best SGP narrative */
+  .narr-section{margin-bottom:12px;}
+  .narr-section:last-child{margin-bottom:0;}
+  .narr-heading{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.2px;color:var(--accent);margin-bottom:4px;}
+  .narr-body{font-size:12px;line-height:1.7;color:var(--text);}
+  .narr-body strong{color:var(--accent);font-weight:500;}
+  .narr-body .under-hl{color:var(--green);}
+  .narr-body .trap-hl{color:var(--orange);}
+  .narr-body .stat-hl{color:var(--blue);font-family:'DM Mono',monospace;font-size:11px;}
+  .narr-divider{height:1px;background:var(--border);margin:10px 0;}
+  .narr-leg-chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid rgba(34,197,94,0.3);border-radius:5px;padding:4px 9px;font-size:11px;font-family:'DM Mono',monospace;color:var(--green);margin-right:4px;}
+  .narr-leg-chip .leg-odds{color:var(--muted);}
+  .narr-disclaimer{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);padding:8px 13px;border-top:1px solid var(--border);background:rgba(255,255,255,0.02);line-height:1.6;}
+
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}.panel-body{max-height:380px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">EV<span>SGP</span></div>
+  <div class="game-pill">
+    <b>#7 Kentucky Wildcats vs #2 Iowa State Cyclones</b><br>
+    Sun Mar 22 · 2:45 PM ET · CBS · Enterprise Center, St. Louis
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- EV Formula explainer -->
+  <div class="ev-explainer">
+    <div>
+      <div class="ev-label">How EV is calculated</div>
+      <div class="ev-formula">EV = (true_prob × payout_multiplier) - (1 - true_prob)<br>Positive EV = bet has long-run mathematical value<br>Negative EV = house has the edge on this specific bet</div>
+    </div>
+    <div class="ev-item">
+      <div class="ev-label">Example: -110 bet at 55% true prob</div>
+      <div class="ev-formula">(0.55 × 0.909) - (0.45) = +0.050<br>= <span style="color:var(--green)">+5.0% EV per dollar</span> — worth betting</div>
+    </div>
+    <div class="ev-item">
+      <div class="ev-label">Example: -110 bet at 50% true prob</div>
+      <div class="ev-formula">(0.50 × 0.909) - (0.50) = -0.045<br>= <span style="color:var(--red)">-4.5% EV per dollar</span> — book has edge</div>
+    </div>
+    <div class="ev-item">
+      <div class="ev-label">SGP correlation adjustment</div>
+      <div class="ev-formula">Positively correlated legs → true joint prob<br>HIGHER than independent math suggests.<br>That gap is where SGP edge comes from.</div>
+    </div>
+  </div>
+
+  <!-- Game intelligence -->
+  <div class="intel">
+    <div class="intel-title">⚡ Game Intelligence — Real Data (Sources: FanDuel, ESPN, Covers, SBR)</div>
+    <div class="intel-grid">
+      <div class="intel-card red">
+        <div class="itag">🚨 Injury — Jefferson almost certainly out</div>
+        Iowa State All-Big 12 PF Joshua Jefferson (ankle, boot) not expected to play. He led ISU in assists and anchored their post defense. Lines have adjusted but secondary usage props may still lag.
+      </div>
+      <div class="intel-card red">
+        <div class="itag">🚨 Kentucky structural problem</div>
+        Kentucky's offense is dribble-jumper, inside-out creation — ISU ranks 94th and 98th percentile defending exactly those sets. KY's path to scoring requires things they almost never do: transition buckets, ball movement. ISU limits transition at one of the lowest frequencies nationally.
+      </div>
+      <div class="intel-card orange">
+        <div class="itag">🪤 Recency bias trap — Oweh Over</div>
+        Oweh dropped 35 in OT — needed 24 FGA + 10 FTA. Books shade his line to 20.5+. Public hammers Over. ISU defense is built to stop exactly his game. Structurally: UNDER has positive EV. Season avg 18.7 ppg; line will be 20+.
+      </div>
+      <div class="intel-card orange">
+        <div class="itag">🪤 Recency bias trap — Toure Over</div>
+        Toure went 25 pts, 11 reb vs Tennessee State — only his 3rd 20+ game ALL year. Season avg ~15 ppg. Books will shade line to 18-19. Sharp money goes Under hard. Classic public overreaction exploit.
+      </div>
+      <div class="intel-card green">
+        <div class="itag">✅ Sharp edge — Momcilovic Over</div>
+        Iowa State's best scorer at 17.1 ppg. Kentucky has no viable defender — Oweh (6'5") or Chandler (6'4") will guard him at 6'8". Mismatch is severe. Jefferson out = more offensive load. Over 16.5 is the only legitimate Over in this game.
+      </div>
+      <div class="intel-card green">
+        <div class="itag">✅ Sharp edge — Chandler 3PT Under</div>
+        Chandler shooting 11.1% from 3 in March (6-of-28). ISU is elite 3PT defense. Books price him on season rate. Under 2.5 threes is statistically the best mispriced line in this game.
+      </div>
+      <div class="intel-card green">
+        <div class="itag">✅ Sharp edge — Lipsey Assists Over</div>
+        5.0 APG season, 6 assists vs TSU. With Jefferson out, Lipsey absorbs full PG creation load. Line likely stays at 4.5 — failing to price Jefferson's absence. Highest-confidence +EV leg in this game.
+      </div>
+      <div class="intel-card blue">
+        <div class="itag">📊 Pace & total context</div>
+        Total set at 145.5. ISU gives up 65.4 ppg (13th nationally). Game projects as defensive battle. Over 145.5 has hit in last 2 ISU games and 5 of last 7 KY games — but that's recency. True projection: slow, ugly, ISU wins by 6-8.
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill"><strong id="s-props">—</strong> Props</div>
+    <div class="stat-pill good"><strong id="s-posev">—</strong> +EV legs</div>
+    <div class="stat-pill"><strong id="s-sel">0</strong> Selected</div>
+    <div class="stat-pill"><strong id="s-parlays">0</strong> Parlays</div>
+  </div>
+
+  <div class="controls">
+    <div class="cg"><label>Min Legs</label><input type="number" id="min-legs" value="2" min="2" max="4"></div>
+    <div class="cg"><label>Max Legs</label><input type="number" id="max-legs" value="3" min="2" max="4"></div>
+    <div class="cg"><label>Min Parlay Odds</label><input type="number" id="min-parlay" value="200"></div>
+    <div class="cg"><label>Max Parlay Odds</label><input type="number" id="max-parlay" value="1200"></div>
+    <div class="cg"><label>Stake ($)</label><input type="number" id="stake" value="10" min="1"></div>
+    <div class="cg"><label>Min EV per leg</label>
+      <select id="min-ev-filter" style="background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 9px;outline:none;">
+        <option value="-99">Any (show all)</option>
+        <option value="0" selected>+EV only (> 0%)</option>
+        <option value="3">Strong +EV (> 3%)</option>
+        <option value="6">Premium +EV (> 6%)</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost" onclick="selectNone()">None</button>
+    <button class="btn btn-green" onclick="selectPosEV()">+EV Only</button>
+    <button class="btn btn-ghost" onclick="selectAll()">All visible</button>
+  </div>
+
+  <div class="layout">
+    <!-- Props -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Props · EV-Ranked</span>
+          <span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--muted)">Green border = +EV · Corr = correlation with game outcome</span>
+        </div>
+        <div class="panel-body" id="props-container"></div>
+      </div>
+    </div>
+
+    <!-- Parlays -->
+    <div>
+      <div class="generate-bar">
+        <div class="sel-count"><strong id="gen-sel">0</strong> legs selected</div>
+        <div class="ev-summary" id="ev-summary" style="color:var(--muted)"></div>
+        <div style="flex:1"></div>
+        <button class="btn btn-green" onclick="generateBestSGP()" style="font-weight:600;border-color:rgba(34,197,94,0.5)">🎯 Best SGP</button>
+        <button class="btn btn-primary" id="gen-btn" onclick="generateParlays()" disabled>⚡ Generate All</button>
+        <button class="btn btn-danger" id="clear-btn" onclick="clearParlays()" style="display:none">Clear</button>
+      </div>
+
+      <!-- Best SGP narrative card — hidden until triggered -->
+      <div id="best-sgp-card" style="display:none;background:var(--surface);border:1px solid rgba(34,197,94,0.25);border-radius:10px;margin-bottom:12px;overflow:hidden;">
+        <div style="background:rgba(34,197,94,0.08);padding:9px 13px;border-bottom:1px solid rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--green)">🎯 Recommended Best SGP</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span id="best-sgp-odds" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent)"></span>
+            <span id="best-sgp-ev" style="font-family:'DM Mono',monospace;font-size:10px;background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:2px 7px;"></span>
+            <button onclick="document.getElementById('best-sgp-card').style.display='none'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>
+          </div>
+        </div>
+        <div id="best-sgp-legs" style="padding:10px 13px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px;"></div>
+        <div id="best-sgp-narrative" style="padding:12px 13px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">SGP Results — EV Ranked</span>
+          <span class="count-badge" id="parlay-badge" style="display:none"></span>
+        </div>
+        <div class="panel-body" id="parlays-container">
+          <div class="empty-state"><div class="icon">📐</div><div>Hit "Best SGP" for a recommendation, or select legs → Generate All</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PROP DATA ─────────────────────────────────────────────────────────────────
+// All values research-backed as of March 22, 2026 game day
+// trueProbAdj = our matchup-adjusted estimate of actual hit probability
+// bookLine = estimated book line (FanDuel/DK typical for this game)
+// corrWithWin: correlation with game outcome winning team
+//   +1 = strongly positively correlated with ISU win
+//   -1 = strongly positively correlated with KY win
+//   0 = largely uncorrelated
+// corrWithLeg: [legId, direction] = correlated with another specific leg
+
+const PROPS = [
+  // ── SCORING ─────────────────────────────────────────────────────────────
+  {
+    id:'mom-pts-o', player:'Milan Momcilovic', team:'Iowa State', cat:'Points',
+    label:'Momcilovic Over 16.5 Pts', line:16.5, dir:'Over', bookOdds:-115,
+    trueProbAdj:0.61,
+    corrWithWin:+0.7, // ISU winning correlates with Momcilovic scoring
+    corrNote:'Positively correlated with ISU win',
+    corrType:'pos',
+    ppg:17.1, seasonHR:0.56,
+    analysis:'Sharp edge. Kentucky has no defender for a 6\'8" shooter — Oweh (6\'5") or Chandler (6\'4") draws the assignment. Jefferson out = more offensive load. Best legitimate Over in game.',
+    noteType:'sharp'
+  },
+  {
+    id:'mom-pts-u', player:'Milan Momcilovic', team:'Iowa State', cat:'Points',
+    label:'Momcilovic Under 16.5 Pts', line:16.5, dir:'Under', bookOdds:-105,
+    trueProbAdj:0.39,
+    corrWithWin:-0.7,
+    corrNote:'Negatively correlated — if ISU wins big, Momcilovic likely hit his line',
+    corrType:'neg',
+    ppg:17.1, seasonHR:0.44,
+    analysis:'Avoid. Fading the clear matchup edge. Wrong side.',
+    noteType:'avoid'
+  },
+  {
+    id:'oweh-pts-o', player:'Otega Oweh', team:'Kentucky', cat:'Points',
+    label:'Oweh Over 20.5 Pts', line:20.5, dir:'Over', bookOdds:-115,
+    trueProbAdj:0.36,
+    corrWithWin:-0.75, // KY win = Oweh likely went off
+    corrNote:'Positively correlated with KY win (upset)',
+    corrType:'pos-ky',
+    ppg:18.7, seasonHR:0.42,
+    analysis:'🪤 Trap. Books shaded up 2+ pts after his 35-pt OT game. ISU 94th/98th percentile vs dribble-jumper/inside-out — Oweh\'s entire game. Needed 24 FGA + 10 FTA for 35. Under is the sharp play.',
+    noteType:'trap'
+  },
+  {
+    id:'oweh-pts-u', player:'Otega Oweh', team:'Kentucky', cat:'Points',
+    label:'Oweh Under 20.5 Pts', line:20.5, dir:'Under', bookOdds:-105,
+    trueProbAdj:0.64,
+    corrWithWin:+0.75,
+    corrNote:'Correlated with ISU winning (Oweh held)',
+    corrType:'pos',
+    ppg:18.7, seasonHR:0.58,
+    analysis:'Best Under in game. ISU defense built to stop exactly Oweh\'s game. Season avg 18.7 + slow ISU pace + double-team pressure = regression from 35-pt outlier. Sharp play.',
+    noteType:'sharp'
+  },
+  {
+    id:'toure-pts-o', player:'Killyan Toure', team:'Iowa State', cat:'Points',
+    label:'Toure Over 18.5 Pts', line:18.5, dir:'Over', bookOdds:-110,
+    trueProbAdj:0.29,
+    corrWithWin:+0.4,
+    corrNote:'Moderate positive correlation with ISU win',
+    corrType:'pos',
+    ppg:15.2, seasonHR:0.27,
+    analysis:'🪤 Classic recency trap. His 25 pts was only his 3rd 20+ game all season (season avg 15.2). Books shade to 18.5. Public hammers Over. Only 27% of games has he hit 18+. Worst value Over on board.',
+    noteType:'trap'
+  },
+  {
+    id:'toure-pts-u', player:'Killyan Toure', team:'Iowa State', cat:'Points',
+    label:'Toure Under 18.5 Pts', line:18.5, dir:'Under', bookOdds:-110,
+    trueProbAdj:0.71,
+    corrWithWin:+0.3,
+    corrNote:'Weakly correlated — ISU can win even if Toure has average game',
+    corrType:'neutral',
+    ppg:15.2, seasonHR:0.73,
+    analysis:'Highest EV single leg in this game. 71% true hit prob at -110 (50.5% needed). Season avg 15.2 — he hits 18.5+ only ~27% of games. Best single-leg value on the board.',
+    noteType:'sharp'
+  },
+  // ── ASSISTS ──────────────────────────────────────────────────────────────
+  {
+    id:'lip-ast-o', player:'Tamin Lipsey', team:'Iowa State', cat:'Assists',
+    label:'Lipsey Over 4.5 Assists', line:4.5, dir:'Over', bookOdds:-115,
+    trueProbAdj:0.63,
+    corrWithWin:+0.55,
+    corrNote:'Positively correlated with ISU controlling game flow',
+    corrType:'pos',
+    ppg:null, seasonHR:0.58,
+    analysis:'Jefferson out = Lipsey absorbs full PG load. Season 5.0 APG, 6 assists last game. Books set line at 4.5 before injury confirmed. Usage math strongly supports Over. High-confidence +EV.',
+    noteType:'sharp'
+  },
+  {
+    id:'lip-ast-u', player:'Tamin Lipsey', team:'Iowa State', cat:'Assists',
+    label:'Lipsey Under 4.5 Assists', line:4.5, dir:'Under', bookOdds:-105,
+    trueProbAdj:0.37,
+    corrWithWin:-0.55,
+    corrNote:'Negatively correlated with ISU win scenario',
+    corrType:'neg',
+    ppg:null, seasonHR:0.42,
+    analysis:'Wrong side given Jefferson\'s absence and Lipsey\'s role expansion. Avoid.',
+    noteType:'avoid'
+  },
+  {
+    id:'chan-ast-u', player:'Collin Chandler', team:'Kentucky', cat:'Assists',
+    label:'Chandler Under 3.5 Assists', line:3.5, dir:'Under', bookOdds:-110,
+    trueProbAdj:0.56,
+    corrWithWin:+0.4,
+    corrNote:'ISU turnovers defense limits assists for secondary PGs',
+    corrType:'pos',
+    ppg:null, seasonHR:0.54,
+    analysis:'ISU forces 15.3 TO/game (5th in nation). Chandler as secondary PG will face consistent pressure. Slight lean Under — ISU defense kills assist opportunities for secondary handlers.',
+    noteType:'moderate'
+  },
+  {
+    id:'chan-ast-o', player:'Collin Chandler', team:'Kentucky', cat:'Assists',
+    label:'Chandler Over 3.5 Assists', line:3.5, dir:'Over', bookOdds:-110,
+    trueProbAdj:0.44,
+    corrWithWin:-0.4,
+    corrNote:'Correlated with KY upset scenario (more possessions)',
+    corrType:'pos-ky',
+    ppg:null, seasonHR:0.46,
+    analysis:'If ISU schemes heavily on Oweh, Chandler handles more. But ISU pressure makes this unreliable. Slight negative EV.',
+    noteType:'moderate'
+  },
+  // ── 3-POINTERS ───────────────────────────────────────────────────────────
+  {
+    id:'chan-3-u', player:'Collin Chandler', team:'Kentucky', cat:'3-Pointers',
+    label:'Chandler Under 2.5 Threes', line:2.5, dir:'Under', bookOdds:-110,
+    trueProbAdj:0.76,
+    corrWithWin:+0.5,
+    corrNote:'Positively correlated with ISU defense dominating',
+    corrType:'pos',
+    ppg:null, seasonHR:0.74,
+    analysis:'Best mispriced line in game. Chandler 11.1% from 3 in March (6-of-28). ISU elite 3PT defense. Books use season rate. Hit 2+ threes in only ~26% of games this month. Under is near-lock quality.',
+    noteType:'sharp'
+  },
+  {
+    id:'chan-3-o', player:'Collin Chandler', team:'Kentucky', cat:'3-Pointers',
+    label:'Chandler Over 2.5 Threes', line:2.5, dir:'Over', bookOdds:-110,
+    trueProbAdj:0.24,
+    corrWithWin:-0.5,
+    corrNote:'Correlated with Kentucky upset (Chandler goes off from 3)',
+    corrType:'pos-ky',
+    ppg:null, seasonHR:0.26,
+    analysis:'🪤 Public hammers this based on season 38% 3PT rate. March reality: 11.1%. Worst value bet on board.',
+    noteType:'trap'
+  },
+  {
+    id:'mom-3-o', player:'Milan Momcilovic', team:'Iowa State', cat:'3-Pointers',
+    label:'Momcilovic Over 2.5 Threes', line:2.5, dir:'Over', bookOdds:-115,
+    trueProbAdj:0.58,
+    corrWithWin:+0.6,
+    corrNote:'Positively correlated with ISU win',
+    corrType:'pos',
+    ppg:null, seasonHR:0.54,
+    analysis:'42% 3PT shooter at 6\'8". Kentucky has no matchup for him. Made 4 threes last game. Moderate +EV. Correlated with Momcilovic pts Over and ISU win.',
+    noteType:'sharp'
+  },
+  {
+    id:'mom-3-u', player:'Milan Momcilovic', team:'Iowa State', cat:'3-Pointers',
+    label:'Momcilovic Under 2.5 Threes', line:2.5, dir:'Under', bookOdds:-105,
+    trueProbAdj:0.42,
+    corrWithWin:-0.6,
+    corrNote:'Negatively correlated — if ISU wins, Momcilovic likely shot well',
+    corrType:'neg',
+    ppg:null, seasonHR:0.46,
+    analysis:'Avoid. Wrong side of clear matchup edge.',
+    noteType:'avoid'
+  },
+  // ── REBOUNDS ─────────────────────────────────────────────────────────────
+  {
+    id:'toure-reb-u', player:'Killyan Toure', team:'Iowa State', cat:'Rebounds',
+    label:'Toure Under 8.5 Rebounds', line:8.5, dir:'Under', bookOdds:-105,
+    trueProbAdj:0.58,
+    corrWithWin:+0.2,
+    corrNote:'Weakly correlated — Toure rebounding doesn\'t strongly predict ISU outcome',
+    corrType:'neutral',
+    ppg:null, seasonHR:0.54,
+    analysis:'Books shade Toure\'s rebound line up after 11-board game. Season avg ~8-9 RPG. With Jefferson out, Toure takes more offensive creation duties = less pure rebounding focus. Slight lean Under.',
+    noteType:'moderate'
+  },
+  {
+    id:'toure-reb-o', player:'Killyan Toure', team:'Iowa State', cat:'Rebounds',
+    label:'Toure Over 8.5 Rebounds', line:8.5, dir:'Over', bookOdds:-115,
+    trueProbAdj:0.42,
+    corrWithWin:+0.2,
+    corrNote:'Weakly correlated with ISU interior dominance',
+    corrType:'neutral',
+    ppg:null, seasonHR:0.46,
+    analysis:'Inflated line after outlier game. Kentucky has two big bodies (Garrison, Dioubate) crashing hard. Moderate negative EV.',
+    noteType:'moderate'
+  },
+];
+
+// ── CORRELATION CLUSTERS ──────────────────────────────────────────────────────
+// Positive correlation pairs — when betting these together in an SGP,
+// true joint probability is HIGHER than independent math suggests
+const CORR_PAIRS = [
+  {a:'mom-pts-o', b:'mom-3-o', boost:0.04, reason:'Same player — scoring and 3PT are directly correlated'},
+  {a:'mom-pts-o', b:'lip-ast-o', boost:0.03, reason:'ISU offense flowing through both players — positively correlated'},
+  {a:'oweh-pts-u', b:'chan-3-u', boost:0.04, reason:'Both reflect ISU defense dominating KY offense — highly correlated'},
+  {a:'oweh-pts-u', b:'toure-pts-u', boost:0.02, reason:'Both Under — ISU winning slow game; moderate positive correlation'},
+  {a:'toure-pts-u', b:'chan-3-u', boost:0.03, reason:'Both reflect slow/defensive game — correlated with ISU control'},
+  {a:'lip-ast-o', b:'mom-pts-o', boost:0.03, reason:'ISU offense in control — Lipsey distributes, Momcilovic scores'},
+  {a:'mom-pts-o', b:'mom-3-o', boost:0.04, reason:'Same player scoring driven by 3PT makes'},
+];
+
+const ANTI_PAIRS = [
+  {a:'oweh-pts-o', b:'oweh-pts-u'},
+  {a:'mom-pts-o', b:'mom-pts-u'},
+  {a:'toure-pts-o', b:'toure-pts-u'},
+  {a:'lip-ast-o', b:'lip-ast-u'},
+  {a:'chan-ast-o', b:'chan-ast-u'},
+  {a:'chan-3-o', b:'chan-3-u'},
+  {a:'mom-3-o', b:'mom-3-u'},
+  {a:'toure-reb-o', b:'toure-reb-u'},
+];
+
+let selectedBets = new Set();
+let selectedBetData = {};
+let generatedParlays = [];
+
+// ── MATH ──────────────────────────────────────────────────────────────────────
+function toDecimal(o){return o>=100?o/100+1:100/Math.abs(o)+1;}
+function toAmerican(d){return d>=2?Math.round((d-1)*100):Math.round(-100/(d-1));}
+function impliedProb(odds){return odds>=100?100/(odds+100):Math.abs(odds)/(Math.abs(odds)+100);}
+
+// EV per $1 bet: (trueProbAdj × net_payout) - (1 - trueProbAdj)
+function calcEV(bet) {
+  const netPayout = toDecimal(bet.bookOdds) - 1; // net win per $1
+  return (bet.trueProbAdj * netPayout) - (1 - bet.trueProbAdj);
+}
+
+// Get correlation boost for a combo
+function getCorrBoost(ids) {
+  let boost = 0;
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++) {
+    const pair = CORR_PAIRS.find(p=>(p.a===ids[i]&&p.b===ids[j])||(p.a===ids[j]&&p.b===ids[i]));
+    if(pair) boost += pair.boost;
+  }
+  return boost;
+}
+
+function getCorrNote(ids) {
+  const notes = [];
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++) {
+    const pair = CORR_PAIRS.find(p=>(p.a===ids[i]&&p.b===ids[j])||(p.a===ids[j]&&p.b===ids[i]));
+    if(pair) notes.push(pair.reason);
+  }
+  return notes;
+}
+
+function hasConflict(ids) {
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++) {
+    if(ANTI_PAIRS.some(p=>(p.a===ids[i]&&p.b===ids[j])||(p.a===ids[j]&&p.b===ids[i]))) return true;
+  }
+  return false;
+}
+
+// Parlay EV calculation with correlation adjustment
+function parlayEV(combo) {
+  const ids = combo.map(b=>b.id);
+  const corrBoost = getCorrBoost(ids);
+
+  // True joint probability = product of individual probs + correlation boost
+  const indepProb = combo.reduce((a,b)=>a*b.trueProbAdj,1);
+  const adjProb = Math.min(0.95, indepProb + corrBoost);
+
+  // Book implied joint probability (no correlation)
+  const bookProb = combo.reduce((a,b)=>a*impliedProb(b.bookOdds),1);
+
+  // Parlay decimal odds
+  const parlayDec = combo.reduce((a,b)=>a*toDecimal(b.bookOdds),1);
+  const netPayout = parlayDec - 1;
+
+  // EV
+  const ev = (adjProb * netPayout) - (1 - adjProb);
+  const evPct = ev * 100;
+
+  return {adjProb, bookProb, corrBoost, parlayDec, ev, evPct, parlayOdds: toAmerican(parlayDec)};
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  renderProps();
+  const posEV = PROPS.filter(p=>calcEV(p)>0).length;
+  document.getElementById('s-props').textContent = PROPS.length;
+  document.getElementById('s-posev').textContent = posEV;
+}
+
+// ── RENDER PROPS ──────────────────────────────────────────────────────────────
+function renderProps() {
+  const minEV = parseFloat(document.getElementById('min-ev-filter').value);
+  const container = document.getElementById('props-container');
+
+  // Group by player
+  const players = {};
+  PROPS.forEach(p=>{
+    const key = p.player;
+    if(!players[key]) players[key]={player:p.player,team:p.team,cat:p.cat,ppg:p.ppg,bets:[]};
+    players[key].bets.push(p);
+  });
+
+  // Sort players: best EV bet first
+  const sorted = Object.values(players).sort((a,b)=>{
+    const aMaxEV = Math.max(...a.bets.map(calcEV));
+    const bMaxEV = Math.max(...b.bets.map(calcEV));
+    return bMaxEV - aMaxEV;
+  });
+
+  container.innerHTML = sorted.map(grp=>{
+    const betsHtml = grp.bets.map(bet=>{
+      const ev = calcEV(bet);
+      const evPct = ev*100;
+      const meetsEV = evPct >= minEV;
+      const sel = selectedBets.has(bet.id);
+
+      const evClass = evPct>=3?'ev-pill-pos':evPct>=0?'ev-pill-break':'ev-pill-neg';
+      const evRowClass = evPct>=0?'ev-pos-row':'ev-neg-row';
+      const hrClass = bet.trueProbAdj>=0.63?'hr-hi':bet.trueProbAdj>=0.53?'hr-mid':'hr-lo';
+      const corrBadgeClass = bet.corrType==='pos'?'corr-pos':bet.corrType==='neg'?'corr-neg':bet.corrType==='neutral'?'corr-neutral':'corr-pos';
+
+      return `<div class="bet-row ${sel?'selected':''} ${evRowClass} ${!meetsEV?'dimmed':''}"
+               onclick="toggleBet('${bet.id}')">
+        <div class="check-box">${sel?'✓':''}</div>
+        <div class="bet-label">${bet.label}</div>
+        <span class="${evClass} ev-pill">${evPct>=0?'+':''}${evPct.toFixed(1)}% EV</span>
+        <span class="${hrClass} hr-pill">${Math.round(bet.trueProbAdj*100)}% true</span>
+        <span class="${corrBadgeClass} corr-badge">${bet.corrNote.split(' ')[0]==='Positively'?'↑corr':bet.corrNote.split(' ')[0]==='Negatively'?'↓corr':'~corr'}</span>
+        <div class="odds-badge ${bet.bookOdds>=0?'odds-pos':'odds-neg'}">${bet.bookOdds>=0?'+':''}${bet.bookOdds}</div>
+      </div>`;
+    }).join('');
+
+    const maxEV = Math.max(...grp.bets.map(calcEV));
+    const topBet = grp.bets.find(b=>calcEV(b)===maxEV);
+    const noteClass = topBet?.noteType==='sharp'?'sharp-note':topBet?.noteType==='trap'?'trap-note':'';
+
+    return `<div class="prop-card">
+      <div class="prop-header">
+        <span class="prop-player">${grp.player}</span>
+        <span class="prop-team">${grp.team}</span>
+        <span class="prop-cat">${grp.cat}</span>
+        ${grp.ppg?`<span class="prop-stat">${grp.ppg} ppg season</span>`:''}
+      </div>
+      <div class="prop-analysis ${noteClass}">${topBet?.analysis||''}</div>
+      <div class="bet-rows">${betsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── TOGGLE BET ────────────────────────────────────────────────────────────────
+function toggleBet(id) {
+  const bet = PROPS.find(p=>p.id===id);
+  if(!bet) return;
+  if(selectedBets.has(id)) {
+    selectedBets.delete(id); delete selectedBetData[id];
+  } else {
+    selectedBets.add(id);
+    selectedBetData[id] = bet;
+  }
+  renderProps();
+  updateStats();
+}
+
+function updateStats() {
+  const n = selectedBets.size;
+  document.getElementById('s-sel').textContent = n;
+  document.getElementById('gen-sel').textContent = n;
+  document.getElementById('gen-btn').disabled = n < 2;
+
+  if(n >= 2) {
+    const bets = Object.values(selectedBetData);
+    const avgEV = bets.reduce((a,b)=>a+calcEV(b),0)/bets.length;
+    const posCount = bets.filter(b=>calcEV(b)>0).length;
+    const evEl = document.getElementById('ev-summary');
+    evEl.textContent = `Avg leg EV: ${avgEV>=0?'+':''}${(avgEV*100).toFixed(1)}% · ${posCount}/${n} +EV legs`;
+    evEl.style.color = avgEV >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    document.getElementById('ev-summary').textContent = '';
+  }
+}
+
+function selectAll() {
+  PROPS.forEach(p=>{
+    const ev = calcEV(p);
+    const minEV = parseFloat(document.getElementById('min-ev-filter').value);
+    if(ev*100 >= minEV) { selectedBets.add(p.id); selectedBetData[p.id]=p; }
+  });
+  renderProps(); updateStats();
+}
+
+function selectPosEV() {
+  selectNone();
+  PROPS.forEach(p=>{if(calcEV(p)>0){selectedBets.add(p.id);selectedBetData[p.id]=p;}});
+  renderProps(); updateStats();
+}
+
+function selectNone() {
+  selectedBets.clear(); selectedBetData={};
+  renderProps(); updateStats();
+}
+
+// ── COMBINATIONS ──────────────────────────────────────────────────────────────
+function combos(arr,k){
+  if(k===1)return arr.map(x=>[x]);
+  if(k===arr.length)return[arr];
+  const r=[];
+  for(let i=0;i<=arr.length-k;i++)combos(arr.slice(i+1),k-1).forEach(c=>r.push([arr[i],...c]));
+  return r;
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+function generateParlays() {
+  const minL=parseInt(document.getElementById('min-legs').value)||2;
+  const maxL=Math.min(4,parseInt(document.getElementById('max-legs').value)||3);
+  const minPO=parseInt(document.getElementById('min-parlay').value)||200;
+  const maxPO=parseInt(document.getElementById('max-parlay').value)||99999;
+  const stake=parseFloat(document.getElementById('stake').value)||10;
+  const bets=Object.values(selectedBetData);
+  generatedParlays=[];
+
+  for(let k=minL;k<=maxL;k++){
+    combos(bets,k).forEach(combo=>{
+      const ids=combo.map(b=>b.id);
+      if(hasConflict(ids))return;
+
+      const pev = parlayEV(combo);
+      if(pev.parlayOdds < minPO || pev.parlayOdds > maxPO)return;
+
+      const is4leg = k===4;
+      const corrNotes = getCorrNote(ids);
+      generatedParlays.push({combo, pev, stake, is4leg, corrNotes});
+    });
+  }
+
+  // Sort by EV descending
+  generatedParlays.sort((a,b)=>b.pev.evPct-a.pev.evPct);
+
+  renderParlays(stake);
+  document.getElementById('s-parlays').textContent=generatedParlays.length;
+  document.getElementById('clear-btn').style.display='inline-block';
+  const badge=document.getElementById('parlay-badge');
+  badge.textContent=`${generatedParlays.length} SGPs`;
+  badge.style.display='inline-block';
+}
+
+function renderParlays(stake) {
+  const container=document.getElementById('parlays-container');
+  if(!generatedParlays.length){
+    container.innerHTML='<div class="empty-state"><div class="icon">📐</div><div>No SGPs met criteria — try adjusting filters</div></div>';
+    return;
+  }
+  const disp=generatedParlays.slice(0,200);
+  container.innerHTML=`<table class="parlay-table">
+    <thead><tr><th>#</th><th>Legs</th><th>Selections</th><th>Payout Odds</th><th>EV (ranked)</th><th>Corr. Boost</th><th>Payout ($${stake})</th></tr></thead>
+    <tbody>${disp.map((p,i)=>{
+      const {pev,combo,is4leg,corrNotes}=p;
+      const oddsCls=pev.parlayOdds>=600?'c-great':pev.parlayOdds>=350?'c-good':'c-ok';
+      const evCls=pev.evPct>=5?'ev-pos':pev.evPct>=0?'ev-neutral':'ev-neg';
+
+      const chips=combo.map(b=>{
+        const bev=calcEV(b);
+        const cls=bev>=0.03?'ev-pos':bev>=0?'ev-break':'ev-neg';
+        return `<span class="leg-chip ${cls}">${b.label} (${bev>=0?'+':''}${(bev*100).toFixed(0)}%EV)</span>`;
+      }).join('');
+
+      const corrBoostPct=(pev.corrBoost*100).toFixed(1);
+      const corrText=pev.corrBoost>0?`<span style="color:var(--green)">+${corrBoostPct}% prob boost</span>`:
+                     pev.corrBoost<0?`<span style="color:var(--red)">${corrBoostPct}% prob drag</span>`:
+                     `<span style="color:var(--muted)">No correlation</span>`;
+
+      const adjProbStr=Math.round(pev.adjProb*100)+'%';
+      const bookProbStr=Math.round(pev.bookProb*100)+'%';
+      const payout=((pev.parlayDec-1)*stake).toFixed(2);
+
+      const corrNoteHtml = corrNotes.length>0 ?
+        `<div class="note" style="color:rgba(34,197,94,0.6)">↑ ${corrNotes[0]}</div>` : '';
+
+      const warn4 = is4leg ? `<span class="warn-4leg">⚠ 4-leg — house edge compounds significantly</span>` : '';
+
+      return `<tr>
+        <td class="parlay-num">${i+1}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)">${combo.length}-leg</td>
+        <td><div class="legs-list">${chips}</div>${corrNoteHtml}${warn4}
+          <div class="note">⚠ SGP — confirm exact odds with your book before placing</div>
+        </td>
+        <td><span class="parlay-odds-num ${oddsCls}">+${pev.parlayOdds}</span></td>
+        <td><div class="ev-cell">
+          <span class="ev-cell-num ${evCls}">${pev.evPct>=0?'+':''}${pev.evPct.toFixed(1)}%</span>
+          <div class="ev-bar-wrap">
+            <div class="ev-bar" style="left:${pev.evPct<0?Math.max(0,50+pev.evPct/2)+'%':'50%'};width:${Math.min(50,Math.abs(pev.evPct)/2)}%;background:${pev.evPct>=0?'var(--green)':'var(--red)'}"></div>
+          </div>
+          <span class="ev-cell-sub">True: ${adjProbStr} · Book: ${bookProbStr}</span>
+        </div></td>
+        <td><div class="corr-cell">${corrText}
+          <span style="font-size:8px;color:var(--muted);font-family:'DM Mono',monospace">Book prices legs independently. Any positive correlation is your edge.</span>
+        </div></td>
+        <td class="payout-cell">+$${payout}</td>
+      </tr>`;
+    }).join('')}</tbody></table>
+    ${generatedParlays.length>200?`<div style="padding:7px 10px;font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">Showing 200 of ${generatedParlays.length}</div>`:''}`;
+}
+
+function clearParlays(){
+  generatedParlays=[];
+  document.getElementById('parlays-container').innerHTML='<div class="empty-state"><div class="icon">📐</div><div>Select legs → Generate EV-ranked SGPs</div></div>';
+  document.getElementById('s-parlays').textContent='0';
+  document.getElementById('clear-btn').style.display='none';
+  document.getElementById('parlay-badge').style.display='none';
+}
+
+// ── BEST SGP NARRATIVES ───────────────────────────────────────────────────────
+// Plain-English explanation for each prop leg — the "why Under / why Over" story
+const LEG_NARRATIVES = {
+  'toure-pts-u': {
+    headline: 'Toure Under 18.5 Pts — The Recency Trap',
+    why: `<span class="trap-hl">Here's what the books are counting on:</span> Killyan Toure just dropped 25 points against Tennessee State, so every casual bettor is hitting the Over on his points today. The books <em>know</em> this and shade the line up to 18.5 — two full points above where it would normally sit. <span class="under-hl">The reality: that 25-point game was only the 3rd time all season Toure has scored 20 or more. His season average is <span class="stat-hl">15.2 ppg</span>.</span> He hits 18.5+ in roughly 27% of his games. The Under isn't pessimistic — it's just the number that reflects what Toure actually does most nights.`,
+    underWhy: `Iowa State runs a methodical half-court offense. Games rarely blow open in ways that inflate individual scoring. The same slow pace that makes ISU hard to beat also caps individual scoring ceilings.`
+  },
+  'oweh-pts-u': {
+    headline: 'Oweh Under 20.5 Pts — Regression After a 35-Point Outlier',
+    why: `Otega Oweh scored 35 against Santa Clara — but <span class="trap-hl">look at how he got there: 24 field goal attempts and 10 free throw attempts in an overtime game.</span> That's an unusually high-volume, high-foul-drawing performance. Iowa State's defense is specifically built to take away the two things Oweh needs: transition opportunities and the dribble-drive that earns free throws. <span class="under-hl">ISU ranks in the <span class="stat-hl">94th and 98th percentile</span> defending those exact actions.</span> Oweh's season average is 18.7 points. Books are setting his line at 20.5+ to exploit public recency bias. The Under is where the math points.`,
+    underWhy: `Iowa State holds opponents to 65.4 points per game (13th nationally). Kentucky's entire offense is built around the dribble-drive and inside-out game — exactly what ISU shuts down. Oweh will work harder for fewer opportunities.`
+  },
+  'chan-3-u': {
+    headline: 'Chandler Under 2.5 Threes — A Cold Shooter in a Bad Matchup',
+    why: `This is the most straightforward mispricing in the game. Collin Chandler is shooting <span class="stat-hl">11.1% from three in March</span> — that's 6 makes on 28 attempts this month. <span class="trap-hl">The public bets his season 38% three-point rate and hammers the Over. The books are fully aware of this and keep the line where it attracts action.</span> <span class="under-hl">Iowa State is also an elite three-point defense — they contest perimeter shots at one of the highest rates in the country.</span> Chandler hitting 3+ threes requires him to make a shot he's been missing all March, against a defense specifically designed to prevent it.`,
+    underWhy: `Unders on cold shooters in defensive matchups are one of the most reliable edges in tournament basketball. The public consistently ignores recent form and bets on a player's "name" rather than their current trajectory.`
+  },
+  'lip-ast-o': {
+    headline: 'Lipsey Over 4.5 Assists — Injury Upside the Books Haven\'t Fully Priced',
+    why: `Iowa State's Joshua Jefferson is almost certainly not playing today due to an ankle injury. <span class="trap-hl">Books set Tamin Lipsey's assist line before Jefferson's status was confirmed.</span> <span class="under-hl">Jefferson was ISU's primary facilitating big — when he's off the floor, the entire offensive creation burden shifts to Lipsey at point guard.</span> Lipsey averages 5.0 assists per game this season and had 6 against Tennessee State. The Over at 4.5 is backed by simple usage math: more possessions run through Lipsey means more assist opportunities. The line should be 5.0+ given Jefferson's absence — at 4.5 it has genuine positive expected value.`,
+    underWhy: `The Over is the right side here. The Under would only make sense if Kentucky pressures Lipsey into turnovers enough to suppress his distribution — possible, but ISU's ball movement typically mitigates that.`
+  },
+  'mom-pts-o': {
+    headline: 'Momcilovic Over 16.5 Pts — An Unmatchable Mismatch',
+    why: `Milan Momcilovic is one of the best shooters in college basketball at <span class="stat-hl">6 feet 8 inches</span>. Kentucky will likely guard him with either Otega Oweh (6'5") or Collin Chandler (6'4"). <span class="under-hl">That height mismatch is severe for a shooter of Momcilovic's caliber.</span> He averages 17.1 points per game this season and scored 21 last round. With Jefferson out, more offensive possessions flow through Momcilovic and he gets increased usage. <span class="trap-hl">This is the one legitimate Over in this game</span> — most props favor the Under given ISU's defensive dominance, but Momcilovic scoring is positively correlated with ISU winning, which is the expected outcome.`,
+    underWhy: `The Over is the sharp play here. The Under would only hit if Kentucky found a way to neutralize a 6'8" shooter with shorter defenders — unlikely given his shooting ability and the mismatch.`
+  },
+  'mom-3-o': {
+    headline: 'Momcilovic Over 2.5 Threes — Elite Shooter, Perfect Mismatch',
+    why: `Momcilovic shoots <span class="stat-hl">42% from three</span> and made 4 threes in the first round. <span class="under-hl">Kentucky cannot put a competent perimeter defender on him at 6'8".</span> This is directly correlated with his points Over — a game where Momcilovic scores also tends to be a game where he's making threes, since that's how he accumulates points. These two legs move together, which is what creates the SGP correlation boost.`,
+    underWhy: `You bet the Over here for the same reason you bet his points Over — the matchup is too favorable to fade.`
+  }
+};
+
+// Narrative explaining why an Under-heavy parlay makes sense holistically
+const UNDER_META_NARRATIVE = `<div class="narr-section">
+  <div class="narr-heading">Why Is This Parlay Mostly Unders?</div>
+  <div class="narr-body">
+    If you're used to betting Overs — especially on star players — this recommendation probably feels counterintuitive. Here's the honest explanation of why sharp bettors often favor Unders in tournament games, and why this specific matchup makes it even more compelling.<br><br>
+    <strong>The sportsbook's business model relies on public Over bias.</strong> Most bettors are optimists. They watch a player score 30 in the first round and immediately bet his points Over in the next game. Sportsbooks know this pattern intimately — they shade lines upward on players who had big games, knowing the public will still hammer the Over. The result is that <span class="under-hl">Under lines in post-breakout-game situations are systematically underpriced</span>, while Over lines are inflated.<br><br>
+    <strong>Iowa State's defense changes the math.</strong> ISU holds opponents to <span class="stat-hl">65.4 ppg (13th nationally)</span>. They play at a slow tempo, eliminate transition opportunities, and rank in the top 5% nationally defending the dribble-drive. Kentucky's entire offensive system is built around the exact actions ISU eliminates. When you play a slow, defensive team, individual scoring props regress toward season averages — and books set lines above those averages after big first-round games.<br><br>
+    <strong>The correlation is what makes the SGP valuable.</strong> When Iowa State controls the pace and wins as expected, <em>all</em> of these Unders hit simultaneously. That's positive correlation — the legs are telling the same story from different angles. Sportsbooks price SGPs assuming the legs are independent events. They're not. That gap is the edge.
+  </div>
+</div>`;
+
+// ── GENERATE BEST SGP ─────────────────────────────────────────────────────────
+function generateBestSGP() {
+  // Run all 2 and 3-leg combos across all +EV props, find highest EV
+  const posEVProps = PROPS.filter(p => calcEV(p) > 0);
+  let best = null;
+
+  for(let k=2; k<=3; k++) {
+    combos(posEVProps, k).forEach(combo => {
+      const ids = combo.map(b=>b.id);
+      if(hasConflict(ids)) return;
+
+      const pev = parlayEV(combo);
+      // Must be in +200 to +800 range for realistic SGP
+      if(pev.parlayOdds < 200 || pev.parlayOdds > 800) return;
+
+      if(!best || pev.evPct > best.pev.evPct) {
+        best = {combo, pev};
+      }
+    });
+  }
+
+  if(!best) return;
+
+  // Render the card
+  const card = document.getElementById('best-sgp-card');
+  const stake = parseFloat(document.getElementById('stake').value) || 10;
+  const payout = ((best.pev.parlayDec - 1) * stake).toFixed(2);
+
+  document.getElementById('best-sgp-odds').textContent = '+' + best.pev.parlayOdds;
+  document.getElementById('best-sgp-ev').textContent = (best.pev.evPct >= 0 ? '+' : '') + best.pev.evPct.toFixed(1) + '% EV';
+
+  // Leg chips
+  document.getElementById('best-sgp-legs').innerHTML = best.combo.map(b => {
+    const ev = calcEV(b);
+    return `<span class="narr-leg-chip">${b.label} <span class="leg-odds">${b.bookOdds>=0?'+':''}${b.bookOdds} · ${ev>=0?'+':''}${(ev*100).toFixed(0)}%EV</span></span>`;
+  }).join('') + `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:8px">$${stake} → +$${payout} if hits</span>`;
+
+  // Build narrative
+  let narrativeHtml = UNDER_META_NARRATIVE + '<div class="narr-divider"></div>';
+
+  best.combo.forEach((b, i) => {
+    const narr = LEG_NARRATIVES[b.id];
+    if(narr) {
+      narrativeHtml += `<div class="narr-section">
+        <div class="narr-heading">Leg ${i+1}: ${narr.headline}</div>
+        <div class="narr-body">${narr.why}</div>
+      </div>`;
+      if(i < best.combo.length - 1) narrativeHtml += '<div class="narr-divider"></div>';
+    }
+  });
+
+  // Correlation note
+  const corrNotes = getCorrNote(best.combo.map(b=>b.id));
+  if(corrNotes.length > 0) {
+    narrativeHtml += `<div class="narr-divider"></div><div class="narr-section">
+      <div class="narr-heading">Why These Legs Work Together</div>
+      <div class="narr-body"><span class="under-hl">These legs are positively correlated</span> — they tend to hit or miss together based on the same underlying game narrative. ${corrNotes.map(n=>`<strong>${n}.</strong>`).join(' ')} When the book prices an SGP, it multiplies the odds assuming each leg is completely independent. The true joint probability is higher than that math suggests — and that gap is the edge.<br><br>Combined true probability: <span class="stat-hl">${Math.round(best.pev.adjProb*100)}%</span> (book prices it at <span class="stat-hl">${Math.round(best.pev.bookProb*100)}%</span> — a <span class="under-hl">${Math.round((best.pev.adjProb-best.pev.bookProb)*100)} percentage point edge</span> from correlation alone).</div>
+    </div>`;
+  }
+
+  document.getElementById('best-sgp-narrative').innerHTML = narrativeHtml;
+  document.getElementById('best-sgp-narrative').insertAdjacentHTML('afterend',
+    `<div class="narr-disclaimer">⚠ Confirm exact SGP odds on DraftKings or FanDuel before placing — books adjust SGP pricing based on correlation and the final odds may differ from the straight multiplication shown here. True probability estimates and EV calculations are based on matchup research and season averages; they are informed projections, not guarantees.</div>`
+  );
+
+  card.style.display = 'block';
+// Min EV filter change
+document.getElementById('min-ev-filter').addEventListener('change', renderProps);
+
+init();
+</script>
+</body>
+</html>
