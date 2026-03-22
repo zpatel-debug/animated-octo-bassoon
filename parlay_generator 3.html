@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parlay Builder — March 22, 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c0f;--surface:#111318;--surface2:#181c22;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --accent:#e8ff47;--accent2:#ff6b35;--text:#f0f0ee;
+    --muted:#6b7280;--green:#22c55e;--red:#ef4444;--purple:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--accent);}
+  .logo span{color:var(--text);}
+  .header-right{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:right;line-height:1.6;}
+  .main{padding:18px 22px;max-width:1400px;margin:0 auto;}
+  .stats-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 13px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px;}
+  .stat-pill strong{color:var(--accent);font-size:16px;}
+  .controls{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+  .cg{display:flex;flex-direction:column;gap:5px;}
+  .cg label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .cg input{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:7px 11px;outline:none;width:90px;}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;}
+  .tab{padding:5px 11px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.15s;}
+  .tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+  .tab.props-tab.active{background:var(--purple);border-color:var(--purple);color:#000;}
+  .sgp-wrap{display:flex;flex-direction:column;gap:5px;}
+  .sgp-wrap label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .toggle-row{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;cursor:pointer;user-select:none;transition:border-color 0.15s;}
+  .toggle-row.on{border-color:var(--purple);background:rgba(167,139,250,0.08);}
+  .toggle-track{width:28px;height:16px;background:var(--border2);border-radius:8px;position:relative;flex-shrink:0;transition:background 0.2s;}
+  .toggle-track.on{background:var(--purple);}
+  .toggle-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;border-radius:50%;transition:transform 0.2s;}
+  .toggle-track.on .toggle-thumb{transform:translateX(12px);}
+  .toggle-lbl{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);transition:color 0.2s;}
+  .toggle-row.on .toggle-lbl{color:var(--purple);}
+  .btn{padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:#0a0c0f;}
+  .btn-primary:hover:not(:disabled){background:#d4eb2a;}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2);}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm{padding:4px 9px;font-size:11px;}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,0.3);font-size:12px;padding:6px 11px;}
+  .layout{display:grid;grid-template-columns:390px 1fr;gap:16px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .panel-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--accent);}
+  .panel-body{overflow-y:auto;max-height:620px;}
+  .game-card{border-bottom:1px solid var(--border);padding:12px 16px;}
+  .game-card:last-child{border-bottom:none;}
+  .game-time{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;}
+  .game-teams{font-size:11px;color:var(--muted);margin-bottom:7px;font-family:'DM Mono',monospace;}
+  .mkt-tabs{display:flex;gap:3px;margin-bottom:7px;flex-wrap:wrap;}
+  .mkt-tab{padding:3px 8px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.12s;}
+  .mkt-tab.active{background:rgba(232,255,71,0.12);border-color:rgba(232,255,71,0.4);color:var(--accent);}
+  .mkt-tab.props-active{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.4);color:var(--purple);}
+  .game-matchup{display:flex;flex-direction:column;gap:5px;}
+  .bet-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;background:var(--surface2);}
+  .bet-row:hover{border-color:rgba(232,255,71,0.4);}
+  .bet-row.selected{border-color:var(--accent);background:rgba(232,255,71,0.07);}
+  .bet-row.selected-sgp{border-color:var(--purple);background:rgba(167,139,250,0.07);}
+  .bet-row.dimmed{opacity:0.3;pointer-events:none;}
+  .check-box{width:14px;height:14px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;}
+  .bet-row.selected .check-box{background:var(--accent);border-color:var(--accent);color:#000;}
+  .bet-row.selected-sgp .check-box{background:var(--purple);border-color:var(--purple);color:#000;}
+  .team-name{flex:1;font-size:12px;font-weight:500;}
+  .mkt-badge{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap;}
+  .mkt-badge.prop{color:var(--purple);border-color:rgba(167,139,250,0.3);}
+  .odds-badge{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;padding:2px 6px;border-radius:4px;min-width:54px;text-align:center;}
+  .odds-pos{color:var(--green);background:rgba(34,197,94,0.1);}
+  .odds-neg{color:var(--accent2);background:rgba(255,107,53,0.1);}
+  .sgp-indicator{display:flex;align-items:center;gap:5px;margin-bottom:6px;padding:3px 7px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:5px;}
+  .sgp-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+  .sgp-lbl2{font-size:10px;font-family:'DM Mono',monospace;color:var(--purple);}
+  .mkt-divider{height:1px;background:var(--border);margin:5px 0;}
+  .mkt-section-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:3px 0 2px;}
+  .generate-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .sel-count{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+  .sel-count strong{color:var(--accent);font-size:15px;}
+  .parlay-table{width:100%;border-collapse:collapse;}
+  .parlay-table th{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;}
+  .parlay-table td{padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .parlay-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .parlay-num{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;}
+  .legs-list{display:flex;flex-wrap:wrap;gap:3px;}
+  .leg-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:10px;font-family:'DM Mono',monospace;white-space:nowrap;}
+  .leg-tag.sgp{border-color:rgba(167,139,250,0.3);color:var(--purple);}
+  .leg-tag.prop{border-color:rgba(167,139,250,0.2);color:rgba(167,139,250,0.8);}
+  .parlay-odds{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;}
+  .c-great{color:var(--accent);}
+  .c-good{color:var(--green);}
+  .c-ok{color:var(--accent2);}
+  .badges{display:flex;gap:3px;flex-wrap:wrap;}
+  .badge{font-size:9px;border-radius:4px;padding:2px 5px;font-family:'DM Mono',monospace;}
+  .badge-leg{background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);}
+  .badge-sgp{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+  .payout{font-family:'DM Mono',monospace;font-size:12px;color:var(--green);}
+  .note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;color:var(--muted);font-size:13px;gap:7px;}
+  .empty-state .icon{font-size:28px;opacity:0.2;}
+  .count-badge{font-size:10px;background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);border-radius:4px;padding:2px 7px;font-family:'DM Mono',monospace;}
+  .data-note{background:rgba(232,255,71,0.05);border:1px solid rgba(232,255,71,0.15);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);line-height:1.7;}
+  .data-note span{color:var(--accent);}
+  .data-note .prop-note{color:var(--purple);}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}.panel-body{max-height:380px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">PARLAY<span>LAB</span></div>
+  <div class="header-right">MARCH MADNESS · SUNDAY MARCH 22, 2026<br>ROUND OF 32 · 8 GAMES</div>
+</div>
+
+<div class="main">
+  <div class="data-note">
+    📊 Game lines from <span>DraftKings via ESPN</span> — verify before placing, lines may move.<br>
+    <span class="prop-note">🎯 Player props</span> based on season averages + matchup context. <span class="prop-note">Always confirm exact prop lines on your sportsbook</span> — these are reference estimates only.
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill"><strong>8</strong> Games</div>
+    <div class="stat-pill"><strong id="s-bets">—</strong> Bets Available</div>
+    <div class="stat-pill"><strong id="s-sel">0</strong> Selected</div>
+    <div class="stat-pill"><strong id="s-parlays">0</strong> Parlays</div>
+  </div>
+
+  <div class="controls">
+    <div class="cg">
+      <label>Markets to Show</label>
+      <div class="tabs">
+        <button class="tab active" data-mkt="h2h" onclick="toggleMkt('h2h',this)">Moneyline</button>
+        <button class="tab active" data-mkt="spreads" onclick="toggleMkt('spreads',this)">Spread</button>
+        <button class="tab props-tab active" data-mkt="props" onclick="toggleMkt('props',this)">Player Pts</button>
+      </div>
+    </div>
+    <div class="cg"><label>Min Legs</label><input type="number" id="min-legs" value="2" min="2" max="8"></div>
+    <div class="cg"><label>Max Legs</label><input type="number" id="max-legs" value="3" min="2" max="10"></div>
+    <div class="cg"><label>Min Odds/Leg</label><input type="number" id="min-odds" value="-120"></div>
+    <div class="cg"><label>Min Parlay Odds</label><input type="number" id="min-parlay" value="200"></div>
+    <div class="cg"><label>Stake ($)</label><input type="number" id="stake" value="10" min="1"></div>
+    <div class="sgp-wrap">
+      <label>Same-Game Parlays</label>
+      <div class="toggle-row" id="sgp-toggle" onclick="toggleSGP()">
+        <div class="toggle-track" id="sgp-track"><div class="toggle-thumb"></div></div>
+        <span class="toggle-lbl" id="sgp-lbl">OFF</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Today's Games</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-secondary btn-sm" onclick="selectAll()">All</button>
+            <button class="btn btn-secondary btn-sm" onclick="selectNone()">None</button>
+          </div>
+        </div>
+        <div class="panel-body" id="games-container"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="generate-bar">
+        <div class="sel-count"><strong id="gen-sel">0</strong> bets selected</div>
+        <div style="font-size:11px;color:var(--purple);font-family:'DM Mono',monospace;display:none" id="sgp-info"></div>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" id="gen-btn" onclick="generateParlays()" disabled>⚡ Generate Parlays</button>
+        <button class="btn btn-danger" id="clear-btn" onclick="clearParlays()" style="display:none">Clear</button>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Parlays</span>
+          <span class="count-badge" id="parlay-badge" style="display:none"></span>
+        </div>
+        <div class="panel-body" id="parlays-container">
+          <div class="empty-state"><div class="icon">🏀</div><div>Select bets → Generate</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+// Game lines: DraftKings via ESPN (March 22, 2026)
+// Props: Estimated from season averages — VERIFY WITH YOUR BOOK
+const GAMES = [
+  {
+    id:'g1', time:'12:10 PM ET', tv:'CBS', away:'Miami Hurricanes', home:'Purdue Boilermakers',
+    seeds:'(7) vs (2)',
+    h2h:[{name:'Miami Hurricanes',odds:310},{name:'Purdue Boilermakers',odds:-400}],
+    spreads:[{name:'Miami Hurricanes',odds:-110,point:8.5},{name:'Purdue Boilermakers',odds:-110,point:-8.5}],
+    props:[
+      {name:'Malik Reneau Over 17.5 Pts',odds:-115,player:'Malik Reneau',team:'Miami',line:17.5,dir:'Over'},
+      {name:'Malik Reneau Under 17.5 Pts',odds:-105,player:'Malik Reneau',team:'Miami',line:17.5,dir:'Under'},
+      {name:'Tre Donaldson Over 13.5 Pts',odds:-110,player:'Tre Donaldson',team:'Miami',line:13.5,dir:'Over'},
+      {name:'Tre Donaldson Under 13.5 Pts',odds:-110,player:'Tre Donaldson',team:'Miami',line:13.5,dir:'Under'},
+      {name:'Zach Edey Over 19.5 Pts',odds:-115,player:'Zach Edey',team:'Purdue',line:19.5,dir:'Over'},
+      {name:'Zach Edey Under 19.5 Pts',odds:-105,player:'Zach Edey',team:'Purdue',line:19.5,dir:'Under'},
+      {name:'Braden Smith Over 13.5 Pts',odds:-110,player:'Braden Smith',team:'Purdue',line:13.5,dir:'Over'},
+      {name:'Braden Smith Under 13.5 Pts',odds:-110,player:'Braden Smith',team:'Purdue',line:13.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g2', time:'2:45 PM ET', tv:'CBS', away:'Kentucky Wildcats', home:'Iowa State Cyclones',
+    seeds:'(7) vs (2)',
+    h2h:[{name:'Kentucky Wildcats',odds:190},{name:'Iowa State Cyclones',odds:-230}],
+    spreads:[{name:'Kentucky Wildcats',odds:-110,point:4.5},{name:'Iowa State Cyclones',odds:-110,point:-4.5}],
+    props:[
+      {name:'Otega Oweh Over 19.5 Pts',odds:-115,player:'Otega Oweh',team:'Kentucky',line:19.5,dir:'Over'},
+      {name:'Otega Oweh Under 19.5 Pts',odds:-105,player:'Otega Oweh',team:'Kentucky',line:19.5,dir:'Under'},
+      {name:'Killyan Toure Over 16.5 Pts',odds:-110,player:'Killyan Toure',team:'Iowa State',line:16.5,dir:'Over'},
+      {name:'Killyan Toure Under 16.5 Pts',odds:-110,player:'Killyan Toure',team:'Iowa State',line:16.5,dir:'Under'},
+      {name:'Milan Momcilovic Over 13.5 Pts',odds:-115,player:'Milan Momcilovic',team:'Iowa State',line:13.5,dir:'Over'},
+      {name:'Milan Momcilovic Under 13.5 Pts',odds:-105,player:'Milan Momcilovic',team:'Iowa State',line:13.5,dir:'Under'},
+      {name:'Tamin Lipsey Over 11.5 Pts',odds:-110,player:'Tamin Lipsey',team:'Iowa State',line:11.5,dir:'Over'},
+      {name:'Tamin Lipsey Under 11.5 Pts',odds:-110,player:'Tamin Lipsey',team:'Iowa State',line:11.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g3', time:'5:15 PM ET', tv:'CBS', away:'St. Johns Red Storm', home:'Kansas Jayhawks',
+    seeds:'(5) vs (4)',
+    h2h:[{name:"St. John's Red Storm",odds:-166},{name:'Kansas Jayhawks',odds:140}],
+    spreads:[{name:"St. John's Red Storm",odds:-110,point:-3.5},{name:'Kansas Jayhawks',odds:-110,point:3.5}],
+    props:[
+      {name:'Darryn Peterson Over 21.5 Pts',odds:-115,player:'Darryn Peterson',team:'Kansas',line:21.5,dir:'Over'},
+      {name:'Darryn Peterson Under 21.5 Pts',odds:-105,player:'Darryn Peterson',team:'Kansas',line:21.5,dir:'Under'},
+      {name:'Zuby Ejiofor Over 15.5 Pts',odds:-115,player:'Zuby Ejiofor',team:"St. John's",line:15.5,dir:'Over'},
+      {name:'Zuby Ejiofor Under 15.5 Pts',odds:-105,player:'Zuby Ejiofor',team:"St. John's",line:15.5,dir:'Under'},
+      {name:'RJ Luis Jr Over 14.5 Pts',odds:-110,player:'RJ Luis Jr',team:"St. John's",line:14.5,dir:'Over'},
+      {name:'RJ Luis Jr Under 14.5 Pts',odds:-110,player:'RJ Luis Jr',team:"St. John's",line:14.5,dir:'Under'},
+      {name:'Melvin Council Jr Over 12.5 Pts',odds:-110,player:'Melvin Council Jr',team:'Kansas',line:12.5,dir:'Over'},
+      {name:'Melvin Council Jr Under 12.5 Pts',odds:-110,player:'Melvin Council Jr',team:'Kansas',line:12.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g4', time:'6:10 PM ET', tv:'TNT', away:'Tennessee Volunteers', home:'Virginia Cavaliers',
+    seeds:'(6) vs (3)',
+    h2h:[{name:'Tennessee Volunteers',odds:-118},{name:'Virginia Cavaliers',odds:-102}],
+    spreads:[{name:'Tennessee Volunteers',odds:-110,point:-1.5},{name:'Virginia Cavaliers',odds:-110,point:1.5}],
+    props:[
+      {name:'Trent Perry Over 15.5 Pts',odds:-115,player:'Trent Perry',team:'Virginia',line:15.5,dir:'Over'},
+      {name:'Trent Perry Under 15.5 Pts',odds:-105,player:'Trent Perry',team:'Virginia',line:15.5,dir:'Under'},
+      {name:'Jaylen Carey Over 13.5 Pts',odds:-110,player:'Jaylen Carey',team:'Tennessee',line:13.5,dir:'Over'},
+      {name:'Jaylen Carey Under 13.5 Pts',odds:-110,player:'Jaylen Carey',team:'Tennessee',line:13.5,dir:'Under'},
+      {name:'Ja-kobi Gillespie Over 12.5 Pts',odds:-110,player:"Ja'kobi Gillespie",team:'Tennessee',line:12.5,dir:'Over'},
+      {name:'Ja-kobi Gillespie Under 12.5 Pts',odds:-110,player:"Ja'kobi Gillespie",team:'Tennessee',line:12.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g5', time:'7:10 PM ET', tv:'TBS', away:'Iowa Hawkeyes', home:'Florida Gators',
+    seeds:'(9) vs (1)',
+    h2h:[{name:'Iowa Hawkeyes',odds:440},{name:'Florida Gators',odds:-600}],
+    spreads:[{name:'Iowa Hawkeyes',odds:-110,point:11.5},{name:'Florida Gators',odds:-110,point:-11.5}],
+    props:[
+      {name:'Walter Clayton Jr Over 18.5 Pts',odds:-115,player:'Walter Clayton Jr',team:'Florida',line:18.5,dir:'Over'},
+      {name:'Walter Clayton Jr Under 18.5 Pts',odds:-105,player:'Walter Clayton Jr',team:'Florida',line:18.5,dir:'Under'},
+      {name:'Alijah Martin Over 13.5 Pts',odds:-110,player:'Alijah Martin',team:'Florida',line:13.5,dir:'Over'},
+      {name:'Alijah Martin Under 13.5 Pts',odds:-110,player:'Alijah Martin',team:'Florida',line:13.5,dir:'Under'},
+      {name:'Payton Sandfort Over 14.5 Pts',odds:-110,player:'Payton Sandfort',team:'Iowa',line:14.5,dir:'Over'},
+      {name:'Payton Sandfort Under 14.5 Pts',odds:-110,player:'Payton Sandfort',team:'Iowa',line:14.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g6', time:'7:50 PM ET', tv:'truTV', away:'Utah State Aggies', home:'Arizona Wildcats',
+    seeds:'(9) vs (1)',
+    h2h:[{name:'Utah State Aggies',odds:550},{name:'Arizona Wildcats',odds:-800}],
+    spreads:[{name:'Utah State Aggies',odds:-110,point:12.5},{name:'Arizona Wildcats',odds:-118,point:-12.5}],
+    props:[
+      {name:'Brayden Burries Over 16.5 Pts',odds:-115,player:'Brayden Burries',team:'Arizona',line:16.5,dir:'Over'},
+      {name:'Brayden Burries Under 16.5 Pts',odds:-105,player:'Brayden Burries',team:'Arizona',line:16.5,dir:'Under'},
+      {name:'Jaden Bradley Over 13.5 Pts',odds:-110,player:'Jaden Bradley',team:'Arizona',line:13.5,dir:'Over'},
+      {name:'Jaden Bradley Under 13.5 Pts',odds:-110,player:'Jaden Bradley',team:'Arizona',line:13.5,dir:'Under'},
+      {name:'Koa Peat Over 13.5 Pts',odds:-115,player:'Koa Peat',team:'Arizona',line:13.5,dir:'Over'},
+      {name:'Koa Peat Under 13.5 Pts',odds:-105,player:'Koa Peat',team:'Arizona',line:13.5,dir:'Under'},
+      {name:'Mason Falslev Over 14.5 Pts',odds:-110,player:'Mason Falslev',team:'Utah State',line:14.5,dir:'Over'},
+      {name:'Mason Falslev Under 14.5 Pts',odds:-110,player:'Mason Falslev',team:'Utah State',line:14.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g7', time:'8:45 PM ET', tv:'TNT', away:'UCLA Bruins', home:'UConn Huskies',
+    seeds:'(7) vs (2)',
+    h2h:[{name:'UCLA Bruins',odds:164},{name:'UConn Huskies',odds:-198}],
+    spreads:[{name:'UCLA Bruins',odds:-110,point:4.5},{name:'UConn Huskies',odds:-110,point:-4.5}],
+    props:[
+      {name:'Liam McNeeley Over 14.5 Pts',odds:-115,player:'Liam McNeeley',team:'UConn',line:14.5,dir:'Over'},
+      {name:'Liam McNeeley Under 14.5 Pts',odds:-105,player:'Liam McNeeley',team:'UConn',line:14.5,dir:'Under'},
+      {name:'Aidan Mahaney Over 14.5 Pts',odds:-110,player:'Aidan Mahaney',team:'UCLA',line:14.5,dir:'Over'},
+      {name:'Aidan Mahaney Under 14.5 Pts',odds:-110,player:'Aidan Mahaney',team:'UCLA',line:14.5,dir:'Under'},
+      {name:'Lazar Stefanovic Over 12.5 Pts',odds:-110,player:'Lazar Stefanovic',team:'UConn',line:12.5,dir:'Over'},
+      {name:'Lazar Stefanovic Under 12.5 Pts',odds:-110,player:'Lazar Stefanovic',team:'UConn',line:12.5,dir:'Under'},
+      {name:'Eric Dailey Jr Over 13.5 Pts',odds:-110,player:'Eric Dailey Jr',team:'UCLA',line:13.5,dir:'Over'},
+      {name:'Eric Dailey Jr Under 13.5 Pts',odds:-110,player:'Eric Dailey Jr',team:'UCLA',line:13.5,dir:'Under'},
+    ]
+  },
+  {
+    id:'g8', time:'9:45 PM ET', tv:'TBS', away:'Texas Tech Red Raiders', home:'Alabama Crimson Tide',
+    seeds:'(5) vs (4)',
+    h2h:[{name:'Texas Tech Red Raiders',odds:-118},{name:'Alabama Crimson Tide',odds:-102}],
+    spreads:[{name:'Texas Tech Red Raiders',odds:-115,point:-1.5},{name:'Alabama Crimson Tide',odds:-105,point:1.5}],
+    props:[
+      {name:'Mark Sears Over 18.5 Pts',odds:-115,player:'Mark Sears',team:'Alabama',line:18.5,dir:'Over'},
+      {name:'Mark Sears Under 18.5 Pts',odds:-105,player:'Mark Sears',team:'Alabama',line:18.5,dir:'Under'},
+      {name:'Donovan Atwell Over 12.5 Pts',odds:-110,player:'Donovan Atwell',team:'Alabama',line:12.5,dir:'Over'},
+      {name:'Donovan Atwell Under 12.5 Pts',odds:-110,player:'Donovan Atwell',team:'Alabama',line:12.5,dir:'Under'},
+      {name:'Darrion Williams Over 14.5 Pts',odds:-110,player:'Darrion Williams',team:'Texas Tech',line:14.5,dir:'Over'},
+      {name:'Darrion Williams Under 14.5 Pts',odds:-110,player:'Darrion Williams',team:'Texas Tech',line:14.5,dir:'Under'},
+      {name:'JT Toppin Over 13.5 Pts',odds:-110,player:'JT Toppin',team:'Texas Tech',line:13.5,dir:'Over'},
+      {name:'JT Toppin Under 13.5 Pts',odds:-110,player:'JT Toppin',team:'Texas Tech',line:13.5,dir:'Under'},
+    ]
+  }
+];
+
+const MKT_LABELS = {h2h:'ML', spreads:'ATS', props:'PTS'};
+let activeMkts = new Set(['h2h','spreads','props']);
+let sgpEnabled = false;
+let selectedBets = new Set();
+let selectedBetData = {};
+let gameActiveMkt = {};
+let generatedParlays = [];
+
+GAMES.forEach(g => gameActiveMkt[g.id] = 'h2h');
+
+function init() {
+  renderGames();
+  let bc = 0;
+  GAMES.forEach(g => activeMkts.forEach(mkt => { if(g[mkt]) bc += g[mkt].length; }));
+  document.getElementById('s-bets').textContent = bc;
+}
+
+function toggleMkt(mkt, btn) {
+  if(activeMkts.has(mkt)) { if(activeMkts.size===1) return; activeMkts.delete(mkt); btn.classList.remove('active'); }
+  else { activeMkts.add(mkt); btn.classList.add('active'); }
+  renderGames();
+}
+
+function toggleSGP() {
+  sgpEnabled = !sgpEnabled;
+  document.getElementById('sgp-track').classList.toggle('on', sgpEnabled);
+  document.getElementById('sgp-toggle').classList.toggle('on', sgpEnabled);
+  document.getElementById('sgp-lbl').textContent = sgpEnabled ? 'ON' : 'OFF';
+  renderGames(); updateStats();
+}
+
+function renderGames() {
+  const minOdds = parseInt(document.getElementById('min-odds').value) || -10000;
+  const container = document.getElementById('games-container');
+
+  container.innerHTML = GAMES.map(g => {
+    if(sgpEnabled) {
+      const avail = Array.from(activeMkts).filter(m => g[m] && g[m].length);
+      const act = gameActiveMkt[g.id] || avail[0] || 'h2h';
+      const mktTabsHtml = avail.map(m => {
+        const isProp = m === 'props';
+        const isAct = m === act;
+        const cls = isProp ? (isAct ? 'mkt-tab props-active' : 'mkt-tab') : (isAct ? 'mkt-tab active' : 'mkt-tab');
+        return `<button class="${cls}" onclick="setGameMkt('${g.id}','${m}',this)">${MKT_LABELS[m]}</button>`;
+      }).join('');
+      const rows = (g[act]||[]).map(o => buildRow(g,o,act,minOdds)).join('');
+      const sgpCount = Array.from(selectedBets).filter(id => selectedBetData[id]?.gameId===g.id).length;
+      const sgpInd = `<div id="sgpind-${g.id}" class="${sgpCount>1?'sgp-indicator':''}">${sgpCount>1?`<div class="sgp-dot"></div><span class="sgp-lbl2">${sgpCount} legs selected (SGP)</span>`:''}</div>`;
+      return `<div class="game-card" id="gc-${g.id}">
+        <div class="game-time">🏀 ${g.time} · ${g.tv} · ${g.seeds}</div>
+        <div class="game-teams">${g.away} @ ${g.home}</div>
+        ${sgpInd}
+        <div class="mkt-tabs">${mktTabsHtml}</div>
+        <div class="game-matchup" id="gm-${g.id}">${rows}</div>
+      </div>`;
+    } else {
+      const sections = Array.from(activeMkts).filter(m=>g[m]&&g[m].length).map((m,i)=> {
+        const isProp = m === 'props';
+        return `${i>0?'<div class="mkt-divider"></div>':''}<div class="mkt-section-label" style="${isProp?'color:var(--purple)':''}">${MKT_LABELS[m]}</div>` +
+          g[m].map(o=>buildRow(g,o,m,minOdds)).join('');
+      }).join('');
+      return `<div class="game-card">
+        <div class="game-time">🏀 ${g.time} · ${g.tv} · ${g.seeds}</div>
+        <div class="game-teams">${g.away} @ ${g.home}</div>
+        <div class="game-matchup">${sections}</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function buildRow(g, o, mkt, minOdds) {
+  const id = `${g.id}||${mkt}||${o.name}||${o.odds}` + (o.point!==undefined?`||${o.point}`:'');
+  const sel = selectedBets.has(id);
+  const isProp = mkt === 'props';
+  const selClass = sel ? (sgpEnabled?'selected-sgp':'selected') : '';
+  const pos = o.odds >= 0;
+  const pts = o.point!==undefined ? ` ${o.point>0?'+':''}${o.point}` : '';
+  const meets = o.odds >= minOdds;
+  const eid = id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `<div class="bet-row ${selClass} ${!meets?'dimmed':''}" onclick="toggleBet(this,'${eid}','${g.id}','${mkt}',${o.odds})">
+    <div class="check-box">${sel?'✓':''}</div>
+    <div class="team-name">${o.name}${pts}</div>
+    <span class="mkt-badge ${isProp?'prop':''}">${MKT_LABELS[mkt]}</span>
+    <div class="odds-badge ${pos?'odds-pos':'odds-neg'}">${pos?'+':''}${o.odds}</div>
+  </div>`;
+}
+
+function setGameMkt(gid, mkt, btn) {
+  gameActiveMkt[gid] = mkt;
+  const card = document.getElementById(`gc-${gid}`);
+  if(card) card.querySelectorAll('.mkt-tab').forEach(t => { t.classList.remove('active','props-active'); });
+  btn.classList.add(mkt==='props'?'props-active':'active');
+  const g = GAMES.find(x=>x.id===gid);
+  const minOdds = parseInt(document.getElementById('min-odds').value)||-10000;
+  const el = document.getElementById(`gm-${gid}`);
+  if(el&&g) el.innerHTML=(g[mkt]||[]).map(o=>buildRow(g,o,mkt,minOdds)).join('');
+}
+
+function toggleBet(el, id, gameId, mkt, odds) {
+  const selClass = sgpEnabled?'selected-sgp':'selected';
+  if(selectedBets.has(id)) {
+    selectedBets.delete(id); delete selectedBetData[id];
+    el.classList.remove('selected','selected-sgp'); el.querySelector('.check-box').textContent='';
+  } else {
+    selectedBets.add(id);
+    const parts=id.split('||');
+    selectedBetData[id]={id,gameId,market:mkt,name:parts[2],odds,point:parts[4],isProp:mkt==='props'};
+    el.classList.add(selClass); el.querySelector('.check-box').textContent='✓';
+  }
+  if(sgpEnabled) updateSGPIndicator(gameId);
+  updateStats();
+}
+
+function updateSGPIndicator(gameId) {
+  const el=document.getElementById(`sgpind-${gameId}`);
+  if(!el) return;
+  const cnt=Array.from(selectedBets).filter(id=>selectedBetData[id]?.gameId===gameId).length;
+  el.className=cnt>1?'sgp-indicator':'';
+  el.innerHTML=cnt>1?`<div class="sgp-dot"></div><span class="sgp-lbl2">${cnt} legs selected (SGP)</span>`:'';
+}
+
+function updateStats() {
+  const n=selectedBets.size;
+  document.getElementById('s-sel').textContent=n;
+  document.getElementById('gen-sel').textContent=n;
+  document.getElementById('gen-btn').disabled=n<2;
+  const info=document.getElementById('sgp-info');
+  if(sgpEnabled) {
+    const gmap={}; Object.values(selectedBetData).forEach(b=>{gmap[b.gameId]=(gmap[b.gameId]||0)+1;});
+    const sg=Object.values(gmap).filter(c=>c>1).length;
+    info.textContent=sg>0?`${sg} SGP game${sg>1?'s':''}`:''; info.style.display=sg>0?'block':'none';
+  } else info.style.display='none';
+}
+
+function selectAll() {
+  document.querySelectorAll('.bet-row:not(.dimmed)').forEach(el=>{
+    const m=el.getAttribute('onclick').match(/toggleBet\(this,'([^']+)','([^']+)','([^']+)',(-?\d+)\)/);
+    if(!m) return;
+    const id=m[1].replace(/\\'/g,"'"),gameId=m[2],mkt=m[3],odds=parseInt(m[4]);
+    if(selectedBets.has(id)) return;
+    selectedBets.add(id);
+    const parts=id.split('||');
+    selectedBetData[id]={id,gameId,market:mkt,name:parts[2],odds,point:parts[4],isProp:mkt==='props'};
+    el.classList.add(sgpEnabled?'selected-sgp':'selected'); el.querySelector('.check-box').textContent='✓';
+  });
+  GAMES.forEach(g=>{if(sgpEnabled) updateSGPIndicator(g.id);});
+  updateStats();
+}
+
+function selectNone() {
+  selectedBets.clear(); selectedBetData={};
+  document.querySelectorAll('.bet-row.selected,.bet-row.selected-sgp').forEach(el=>{
+    el.classList.remove('selected','selected-sgp'); el.querySelector('.check-box').textContent='';
+  });
+  GAMES.forEach(g=>updateSGPIndicator(g.id));
+  updateStats();
+}
+
+function toDecimal(o){return o>=100?o/100+1:100/Math.abs(o)+1;}
+function toAmerican(d){return d>=2?Math.round((d-1)*100):Math.round(-100/(d-1));}
+
+function combos(arr,k){
+  if(k===1) return arr.map(x=>[x]);
+  if(k===arr.length) return [arr];
+  const r=[];
+  for(let i=0;i<=arr.length-k;i++) combos(arr.slice(i+1),k-1).forEach(c=>r.push([arr[i],...c]));
+  return r;
+}
+
+function generateParlays() {
+  const minL=parseInt(document.getElementById('min-legs').value)||2;
+  const maxL=parseInt(document.getElementById('max-legs').value)||3;
+  const minPO=parseInt(document.getElementById('min-parlay').value)||200;
+  const stake=parseFloat(document.getElementById('stake').value)||10;
+  const bets=Object.values(selectedBetData);
+  generatedParlays=[];
+
+  for(let k=minL;k<=maxL;k++) {
+    combos(bets,k).forEach(combo=>{
+      const gmap={};
+      combo.forEach(b=>{if(!gmap[b.gameId]) gmap[b.gameId]=[]; gmap[b.gameId].push(b);});
+      if(!sgpEnabled && Object.values(gmap).some(legs=>legs.length>1)) return;
+
+      let conflict=false;
+      if(sgpEnabled) {
+        Object.values(gmap).forEach(legs=>{
+          if(legs.length<2) return;
+          const byMkt={};
+          legs.forEach(l=>{if(!byMkt[l.market]) byMkt[l.market]=[]; byMkt[l.market].push(l);});
+          Object.values(byMkt).forEach(ml=>{
+            if(ml.length<2) return;
+            ml.forEach((a,i)=>ml.slice(i+1).forEach(b=>{
+              if(a.market==='h2h') conflict=true;
+              if(!a.isProp&&!b.isProp&&a.point!==undefined&&b.point!==undefined&&Math.abs(parseFloat(a.point))===Math.abs(parseFloat(b.point))&&a.name!==b.name) conflict=true;
+              // Block same player over + under
+              if(a.isProp&&b.isProp&&a.name&&b.name){
+                const aBase=a.name.replace(/ Over .+| Under .+/,'');
+                const bBase=b.name.replace(/ Over .+| Under .+/,'');
+                if(aBase===bBase) conflict=true;
+              }
+            }));
+          });
+        });
+      }
+      if(conflict) return;
+
+      const dec=combo.reduce((a,b)=>a*toDecimal(b.odds),1);
+      const am=toAmerican(dec);
+      if(am<minPO) return;
+      const hasSgp=Object.values(gmap).some(l=>l.length>1);
+      const hasProp=combo.some(b=>b.isProp);
+      generatedParlays.push({combo,am,payout:((dec-1)*stake).toFixed(2),hasSgp,hasProp,gmap});
+    });
+  }
+
+  generatedParlays.sort((a,b)=>b.am-a.am);
+  renderParlays(stake);
+  document.getElementById('s-parlays').textContent=generatedParlays.length;
+  document.getElementById('clear-btn').style.display='inline-block';
+  const badge=document.getElementById('parlay-badge');
+  badge.textContent=`${generatedParlays.length} parlays`;
+  badge.style.display='inline-block';
+}
+
+function renderParlays(stake) {
+  const container=document.getElementById('parlays-container');
+  if(!generatedParlays.length) {
+    container.innerHTML='<div class="empty-state"><div class="icon">🎲</div><div>No parlays met criteria — try loosening filters</div></div>';
+    return;
+  }
+  const disp=generatedParlays.slice(0,500);
+  container.innerHTML=`<table class="parlay-table">
+    <thead><tr><th>#</th><th>Type</th><th>Selections</th><th>Odds</th><th>Payout ($${stake})</th></tr></thead>
+    <tbody>${disp.map((p,i)=>{
+      const cls=p.am>=500?'c-great':p.am>=300?'c-good':'c-ok';
+      const legs=p.combo.map(b=>{
+        const isSgpLeg=p.gmap[b.gameId]?.length>1;
+        const pts=b.point?` ${parseFloat(b.point)>0?'+':''}${b.point}`:'';
+        const tagCls=isSgpLeg?'sgp':b.isProp?'prop':'';
+        return `<span class="leg-tag ${tagCls}">${b.name}${pts} <span style="opacity:0.5">${MKT_LABELS[b.market]}</span> (${b.odds>=0?'+':''}${b.odds})</span>`;
+      }).join('');
+      const notes=[];
+      if(p.hasSgp) notes.push('SGP — confirm odds w/ book');
+      if(p.hasProp) notes.push('Prop lines estimated — verify on DK/FD');
+      return `<tr>
+        <td class="parlay-num">${i+1}</td>
+        <td><div class="badges">
+          <span class="badge badge-leg">${p.combo.length}-leg</span>
+          ${p.hasSgp?'<span class="badge badge-sgp">SGP</span>':''}
+          ${p.hasProp?'<span class="badge" style="background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2)">PROP</span>':''}
+        </div></td>
+        <td><div class="legs-list">${legs}</div>${notes.length?`<div class="note">⚠ ${notes.join(' · ')}</div>`:''}</td>
+        <td><span class="parlay-odds ${cls}">+${p.am}</span></td>
+        <td class="payout">+$${p.payout}</td>
+      </tr>`;
+    }).join('')}</tbody></table>
+    ${generatedParlays.length>500?`<div style="padding:9px 12px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">Showing 500 of ${generatedParlays.length}</div>`:''}`;
+}
+
+function clearParlays() {
+  generatedParlays=[];
+  document.getElementById('parlays-container').innerHTML='<div class="empty-state"><div class="icon">🏀</div><div>Select bets → Generate</div></div>';
+  document.getElementById('s-parlays').textContent='0';
+  document.getElementById('clear-btn').style.display='none';
+  document.getElementById('parlay-badge').style.display='none';
+}
+
+init();
+</script>
+</body>
+</html>
