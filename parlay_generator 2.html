@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STJ vs KU — EV Prop Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c0f;--surface:#111318;--surface2:#181c22;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--accent:#e8ff47;--accent2:#ff6b35;--text:#f0f0ee;--muted:#6b7280;--green:#22c55e;--red:#ef4444;--purple:#a78bfa;--blue:#60a5fa;--orange:#fb923c;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);}
+.logo span{color:var(--text);}
+.game-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;line-height:1.6;}
+.game-pill b{color:var(--text);}
+.main{padding:14px 20px;max-width:1500px;margin:0 auto;}
+.ev-calc{background:var(--surface);border:1px solid rgba(232,255,71,0.2);border-radius:12px;padding:16px 18px;margin-bottom:14px;}
+.ev-calc-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:4px;}
+.ev-calc-sub{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:14px;line-height:1.6;}
+.ev-calc-sub span{color:var(--accent);}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;}
+.calc-field{display:flex;flex-direction:column;gap:4px;}
+.calc-field label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.calc-field select,.calc-field input{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;outline:none;width:100%;}
+.calc-field select:focus,.calc-field input:focus{border-color:var(--accent);}
+.calc-result{background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:none;}
+.calc-result.show{display:block;}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:10px;}
+.result-stat{display:flex;flex-direction:column;gap:2px;}
+.result-label{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.result-val{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;}
+.val-pos{color:var(--green);}
+.val-neg{color:var(--red);}
+.val-break{color:var(--accent);}
+.val-neutral{color:var(--blue);}
+.result-sub{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);}
+.verdict-bar{border-radius:7px;padding:10px 13px;margin-top:10px;font-size:11px;line-height:1.6;}
+.verdict-bar.pos{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);}
+.verdict-bar.neg{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);}
+.verdict-bar.break{background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.12);}
+.verdict-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;margin-bottom:3px;}
+.verdict-bar.pos .verdict-title{color:var(--green);}
+.verdict-bar.neg .verdict-title{color:var(--red);}
+.verdict-bar.break .verdict-title{color:var(--accent);}
+.verdict-text{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;}
+.btn{padding:7px 13px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-green{background:transparent;color:var(--green);border:1px solid rgba(34,197,94,0.35);}
+.btn-green:hover{background:rgba(34,197,94,0.08);}
+.btn-sm{padding:4px 9px;font-size:10px;}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,0.3);font-size:10px;padding:5px 9px;}
+.tracker{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:14px;}
+.tracker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.tracker-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--accent);}
+.tracker-empty{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);padding:8px 0;}
+.tracker-legs{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.tracker-leg{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);}
+.tracker-leg.ev-pos{border-left:2px solid var(--green);}
+.tracker-leg.ev-neg{border-left:2px solid var(--red);}
+.tracker-leg.ev-break{border-left:2px solid var(--accent);}
+.tleg-name{flex:1;font-size:11px;font-weight:500;}
+.tleg-ev{font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;}
+.tleg-ev-pos{color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);}
+.tleg-ev-neg{color:var(--red);background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);}
+.tleg-ev-break{color:var(--accent);background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.15);}
+.tleg-odds{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.tleg-hr{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.tleg-remove{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;}
+.tleg-remove:hover{color:var(--red);}
+.parlay-summary{background:var(--surface2);border-radius:8px;padding:10px 13px;border:1px solid var(--border);}
+.ps-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.ps-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);}
+.ps-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;}
+.ps-ev-pos{color:var(--green);}
+.ps-ev-neg{color:var(--red);}
+.ps-disclaimer{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:6px;line-height:1.5;border-top:1px solid var(--border);padding-top:6px;}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.intel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;}
+.intel-title{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;}
+.intel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;}
+.ic{background:var(--surface2);border-radius:7px;padding:8px 10px;border-left:2px solid var(--border2);font-size:10px;line-height:1.55;}
+.ic.red{border-left-color:var(--red);}
+.ic.green{border-left-color:var(--green);}
+.ic.orange{border-left-color:var(--orange);}
+.ic.blue{border-left-color:var(--blue);}
+.itag{font-size:8px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+.ic.red .itag{color:var(--red);}
+.ic.green .itag{color:var(--green);}
+.ic.orange .itag{color:var(--orange);}
+.ic.blue .itag{color:var(--blue);}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.panel-header{padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--accent);}
+.panel-body{overflow-y:auto;max-height:500px;}
+.player-card{border-bottom:1px solid var(--border);padding:10px 13px;}
+.player-card:last-child{border-bottom:none;}
+.pc-header{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;}
+.pc-name{font-size:12px;font-weight:500;}
+.pc-team{font-size:8px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;}
+.pc-role{font-size:8px;font-family:'DM Mono',monospace;color:var(--purple);background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:3px;padding:1px 5px;}
+.stat-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
+.stat-chip{font-size:9px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.stat-chip.pts{border-color:rgba(232,255,71,0.25);color:var(--accent);}
+.stat-chip.reb{border-color:rgba(96,165,250,0.25);color:var(--blue);}
+.stat-chip.ast{border-color:rgba(167,139,250,0.25);color:var(--purple);}
+.stat-chip.threes{border-color:rgba(34,197,94,0.25);color:var(--green);}
+.pc-analysis{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);line-height:1.5;padding:5px 8px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);margin-bottom:5px;}
+.pc-analysis.sharp{border-left-color:var(--green);}
+.pc-analysis.trap{border-left-color:var(--orange);}
+.quick-calcs{display:flex;flex-wrap:wrap;gap:3px;}
+.qc-btn{font-size:9px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--border2);color:var(--muted);cursor:pointer;transition:all 0.12s;}
+.qc-btn:hover{border-color:var(--accent);color:var(--accent);}
+@media(max-width:900px){.layout{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">EV<span>CALC</span></div>
+  <div class="game-pill"><b>#5 St. Johns Red Storm vs #4 Kansas Jayhawks</b><br>Sun Mar 22 · 5:15 PM ET · CBS · San Diego</div>
+</div>
+<div class="main">
+
+<div class="ev-calc">
+  <div class="ev-calc-title">Custom EV Calculator</div>
+  <div class="ev-calc-sub">Enter <span>any line your book is offering</span>. The calculator estimates true probability from season averages + matchup context and tells you the exact EV. This is your primary tool — designed for RI book limitations where standard lines are unavailable.</div>
+  <div class="calc-grid">
+    <div class="calc-field">
+      <label>Player</label>
+      <select id="calc-player" onchange="calcEV()">
+        <option value="">Select player</option>
+        <optgroup label="St. Johns">
+          <option value="ejiofor">Zuby Ejiofor</option>
+          <option value="hopkinsb">Bryce Hopkins</option>
+          <option value="jackson">Ian Jackson</option>
+          <option value="sellers">Oziyah Sellers</option>
+          <option value="sanon">Joson Sanon</option>
+        </optgroup>
+        <optgroup label="Kansas">
+          <option value="peterson">Darryn Peterson</option>
+          <option value="white">Tre White</option>
+          <option value="bidunga">Flory Bidunga</option>
+          <option value="council">Melvin Council Jr</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="calc-field">
+      <label>Stat Category</label>
+      <select id="calc-stat" onchange="calcEV()">
+        <option value="pts">Points</option>
+        <option value="reb">Rebounds</option>
+        <option value="ast">Assists</option>
+        <option value="threes">3-Pointers Made</option>
+        <option value="pra">Points + Rebounds + Assists</option>
+        <option value="pr">Points + Rebounds</option>
+        <option value="pa">Points + Assists</option>
+      </select>
+    </div>
+    <div class="calc-field">
+      <label>Direction</label>
+      <select id="calc-dir" onchange="calcEV()">
+        <option value="over">Over</option>
+        <option value="under">Under</option>
+      </select>
+    </div>
+    <div class="calc-field">
+      <label>Your Book Line</label>
+      <input type="number" id="calc-line" placeholder="e.g. 18.5" step="0.5" oninput="calcEV()">
+    </div>
+    <div class="calc-field">
+      <label>Your Book Odds</label>
+      <input type="number" id="calc-odds" placeholder="e.g. -110" oninput="calcEV()">
+    </div>
+    <div class="calc-field">
+      <label>Stake ($)</label>
+      <input type="number" id="calc-stake" value="10" min="1" oninput="calcEV()">
+    </div>
+  </div>
+  <div class="calc-result" id="calc-result">
+    <div class="result-grid">
+      <div class="result-stat"><div class="result-label">Expected Value</div><div class="result-val" id="res-ev">-</div><div class="result-sub">per $1 wagered</div></div>
+      <div class="result-stat"><div class="result-label">True Prob (adj)</div><div class="result-val val-neutral" id="res-prob">-</div><div class="result-sub" id="res-prob-sub">matchup-adjusted</div></div>
+      <div class="result-stat"><div class="result-label">Book Implied Prob</div><div class="result-val val-neutral" id="res-book-prob">-</div><div class="result-sub">from your odds</div></div>
+      <div class="result-stat"><div class="result-label">Your Edge</div><div class="result-val" id="res-edge">-</div><div class="result-sub">true minus implied</div></div>
+      <div class="result-stat"><div class="result-label">Breakeven Odds</div><div class="result-val val-neutral" id="res-breakeven">-</div><div class="result-sub">min for +EV</div></div>
+      <div class="result-stat"><div class="result-label">Payout if hits</div><div class="result-val val-pos" id="res-payout">-</div><div class="result-sub" id="res-payout-sub">on $10</div></div>
+    </div>
+    <div class="verdict-bar" id="verdict-bar">
+      <div class="verdict-title" id="verdict-title">-</div>
+      <div class="verdict-text" id="verdict-text">-</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-green btn-sm" onclick="addToTracker()">+ Add to SGP Tracker</button>
+      <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)" id="add-note"></span>
+    </div>
+  </div>
+</div>
+
+<div class="tracker">
+  <div class="tracker-header">
+    <span class="tracker-title">SGP Tracker <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:0;font-weight:400">add +EV legs to build your parlay</span></span>
+    <button class="btn btn-danger btn-sm" onclick="clearTracker()">Clear all</button>
+  </div>
+  <div id="tracker-legs-container"><div class="tracker-empty">No legs added. Calculate EV above then add legs here.</div></div>
+  <div id="parlay-summary" style="display:none" class="parlay-summary">
+    <div class="ps-row"><span class="ps-label">Legs</span><span class="ps-val" id="ps-legs">-</span></div>
+    <div class="ps-row"><span class="ps-label">Combined true probability</span><span class="ps-val" id="ps-prob">-</span></div>
+    <div class="ps-row"><span class="ps-label">Approx parlay odds</span><span class="ps-val" id="ps-odds">-</span></div>
+    <div class="ps-row"><span class="ps-label">Combined EV</span><span class="ps-val" id="ps-ev">-</span></div>
+    <div class="ps-row"><span class="ps-label">Payout on $<span id="ps-stake-label">10</span></span><span class="ps-val ps-ev-pos" id="ps-payout">-</span></div>
+    <div class="ps-disclaimer">Confirm exact SGP odds with your book before placing. Combined EV uses independent probability math. Positively correlated legs will have slightly higher true joint probability than shown — that gap is your correlation edge.</div>
+  </div>
+</div>
+
+<div class="intel">
+  <div class="intel-title">Matchup Intelligence</div>
+  <div class="intel-grid">
+    <div class="ic orange"><div class="itag">Trap — Peterson Points Over</div>28 pts on 24 FGA last game. Recency bias trap. St. Johns held opponents to 63 ppg in last 10. Under has value if line is set at 22+.</div>
+    <div class="ic green"><div class="itag">Edge — Ejiofor Points/PRA Over</div>Big East POY at 16.3/7.3/3.5 on 55% FG. PRA line typically set conservatively in tournament. Strong Over if line is near his average.</div>
+    <div class="ic green"><div class="itag">Edge — Bidunga Rebounds Over</div>9.1 RPG, Kansas 2nd in Big 12 rebounding. Active on glass all game. Rebound Over is strongest KU prop.</div>
+    <div class="ic orange"><div class="itag">Trap — Kansas 3PT props</div>KU holds opponents to 30.5% from 3 (top 25). St. Johns defense is elite. Any KU player 3PT Over is fighting against their own defense quality.</div>
+    <div class="ic red"><div class="itag">Avoid — Kansas depth props</div>Only 5 KU players average 4.8+ ppg. Top-heavy roster with wide variance on secondary players. Stick to Peterson, White, Bidunga, Council only.</div>
+    <div class="ic blue"><div class="itag">Context — Total at 144.5</div>St. Johns averages 81.5 ppg. Moderate pace — enough possessions for stars to hit averages. Lines should be near season averages for St. Johns starters.</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div><div class="panel"><div class="panel-header"><span class="panel-title">St. Johns — Players</span></div><div class="panel-body" id="stj-players"></div></div></div>
+  <div><div class="panel"><div class="panel-header"><span class="panel-title">Kansas — Players</span></div><div class="panel-body" id="ku-players"></div></div></div>
+</div>
+
+</div>
+<script>
+const PLAYERS = {
+  ejiofor:{name:"Zuby Ejiofor",team:"St. Johns",role:"Star - Big East POY",pts:16.3,reb:7.3,ast:3.5,threes:0.4,fgPct:0.55,stdDevPts:5.0,stdDevReb:2.8,stdDevAst:1.4,stdDevThrees:0.7,matchupAdj:{pts:0.02,reb:-0.03,ast:0.02,threes:-0.02,pra:0.01,pr:-0.01,pa:0.02},analysis:"Big East POY on 55% FG. Kansas has elite rim protection (Bidunga+Tiller top 150 in block%). Ejiofor plays perimeter too. PRA is best category — lines set conservatively in tournament.",noteType:"sharp"},
+  hopkinsb:{name:"Bryce Hopkins",team:"St. Johns",role:"Starter - Forward",pts:11.2,reb:5.1,ast:1.8,threes:0.8,fgPct:0.48,stdDevPts:4.5,stdDevReb:2.2,stdDevAst:0.9,stdDevThrees:0.7,matchupAdj:{pts:0,reb:-0.02,ast:0,threes:-0.02,pra:0,pr:-0.01,pa:0},analysis:"Solid secondary scorer. Part of deep rotation. Consistent role player — moderate Over value on combined stats.",noteType:"moderate"},
+  jackson:{name:"Ian Jackson",team:"St. Johns",role:"Starter - Guard",pts:12.8,reb:3.2,ast:2.9,threes:1.6,fgPct:0.44,stdDevPts:5.2,stdDevReb:1.5,stdDevAst:1.2,stdDevThrees:1.0,matchupAdj:{pts:0,reb:0,ast:0.02,threes:-0.03,pra:0,pr:0,pa:0.01},analysis:"Perimeter scorer and facilitator. KU holds opponents to 30.5% from 3 — 3PT props are traps. Points and assists are more reliable.",noteType:"moderate"},
+  sellers:{name:"Oziyah Sellers",team:"St. Johns",role:"Starter - Guard",pts:10.5,reb:2.8,ast:3.1,threes:1.4,fgPct:0.43,stdDevPts:4.8,stdDevReb:1.4,stdDevAst:1.3,stdDevThrees:1.0,matchupAdj:{pts:0,reb:0,ast:0.02,threes:-0.03,pra:0,pr:0,pa:0.01},analysis:"Good distributor. 3PT caution same as Jackson. Assists and combined props are cleaner bets.",noteType:"moderate"},
+  sanon:{name:"Joson Sanon",team:"St. Johns",role:"Starter - Guard/Wing",pts:9.8,reb:3.0,ast:2.2,threes:1.7,fgPct:0.42,stdDevPts:4.2,stdDevReb:1.5,stdDevAst:1.1,stdDevThrees:1.0,matchupAdj:{pts:0,reb:0,ast:0,threes:-0.03,pra:0,pr:0,pa:0},analysis:"1.7 threes per game last 10 but against KU elite 3PT D this is a trap. Wide variance on secondary scorer.",noteType:"trap"},
+  peterson:{name:"Darryn Peterson",team:"Kansas",role:"Star - NBA Top Pick",pts:20.1,reb:5.2,ast:3.8,threes:2.4,fgPct:0.45,stdDevPts:6.5,stdDevReb:2.2,stdDevAst:1.5,stdDevThrees:1.2,matchupAdj:{pts:-0.04,reb:-0.02,ast:0.01,threes:-0.03,pra:-0.03,pr:-0.03,pa:-0.02},analysis:"28 pts last game needed 24 FGA — recency trap. St. Johns held opponents to 63 ppg last 10. Under on points is sharp if book shades line to 22+.",noteType:"trap"},
+  white:{name:"Tre White",team:"Kansas",role:"Starter - Guard",pts:13.8,reb:3.5,ast:2.1,threes:1.8,fgPct:0.452,stdDevPts:4.8,stdDevReb:1.6,stdDevAst:1.1,stdDevThrees:1.0,matchupAdj:{pts:-0.02,reb:0,ast:0,threes:-0.04,pra:-0.02,pr:-0.01,pa:-0.01},analysis:"Solid shooter but St. Johns allows only 42% FG. 3PT props are traps. Points Under has value if line is above 13.",noteType:"moderate"},
+  bidunga:{name:"Flory Bidunga",team:"Kansas",role:"Starter - Center",pts:13.3,reb:9.1,ast:1.2,threes:0.1,fgPct:0.58,stdDevPts:4.5,stdDevReb:3.0,stdDevAst:0.8,stdDevThrees:0.3,matchupAdj:{pts:-0.01,reb:0.03,ast:0,threes:0,pra:0.01,pr:0.01,pa:0},analysis:"Team leader in rebounds at 9.1 RPG. Kansas 2nd in Big 12 rebounding. Rebound Over is strongest KU prop in this game.",noteType:"sharp"},
+  council:{name:"Melvin Council Jr",team:"Kansas",role:"Starter - Guard",pts:12.6,reb:3.2,ast:5.1,threes:1.5,fgPct:0.44,stdDevPts:4.5,stdDevReb:1.5,stdDevAst:1.8,stdDevThrees:1.0,matchupAdj:{pts:-0.02,reb:0,ast:-0.02,threes:-0.04,pra:-0.02,pr:-0.01,pa:-0.02},analysis:"Team-high 5.1 APG but St. Johns forces 6.8 steals per game — they pressure the ball hard. Assist Under has value. 3PT props are traps.",noteType:"moderate"}
+};
+
+function getStatData(pid,stat){
+  const p=PLAYERS[pid];
+  if(!p)return null;
+  const combStd=(a,b)=>Math.sqrt(a**2+b**2)*0.87;
+  switch(stat){
+    case'pts':return{avg:p.pts,std:p.stdDevPts};
+    case'reb':return{avg:p.reb,std:p.stdDevReb};
+    case'ast':return{avg:p.ast,std:p.stdDevAst};
+    case'threes':return{avg:p.threes,std:p.stdDevThrees};
+    case'pra':return{avg:p.pts+p.reb+p.ast,std:combStd(combStd(p.stdDevPts,p.stdDevReb),p.stdDevAst)};
+    case'pr':return{avg:p.pts+p.reb,std:combStd(p.stdDevPts,p.stdDevReb)};
+    case'pa':return{avg:p.pts+p.ast,std:combStd(p.stdDevPts,p.stdDevAst)};
+    default:return null;
+  }
+}
+
+function erf(x){const t=1/(1+0.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return x>=0?y:-y;}
+function normalCDF(x,mean,std){const z=(x-mean)/std;return 0.5*(1+erf(z/Math.sqrt(2)));}
+function toDecimal(o){return o>=100?o/100+1:100/Math.abs(o)+1;}
+function toAmerican(d){return d>=2?Math.round((d-1)*100):Math.round(-100/(d-1));}
+function impliedProb(o){return o>=100?100/(o+100):Math.abs(o)/(Math.abs(o)+100);}
+function computeEV(tp,odds){const net=toDecimal(odds)-1;return(tp*net)-(1-tp);}
+
+function estimateTrueProb(pid,stat,line,dir){
+  const s=getStatData(pid,stat);
+  if(!s)return 0.5;
+  const p=PLAYERS[pid];
+  const adj=(p.matchupAdj&&p.matchupAdj[stat])||0;
+  const probOver=1-normalCDF(line+0.5,s.avg,s.std);
+  const raw=dir==='over'?probOver:1-probOver;
+  return Math.max(0.05,Math.min(0.95,raw+(dir==='over'?adj:-adj)));
+}
+
+let currentCalcResult=null;
+
+function calcEV(){
+  const pid=document.getElementById('calc-player').value;
+  const stat=document.getElementById('calc-stat').value;
+  const dir=document.getElementById('calc-dir').value;
+  const line=parseFloat(document.getElementById('calc-line').value);
+  const odds=parseFloat(document.getElementById('calc-odds').value);
+  const stake=parseFloat(document.getElementById('calc-stake').value)||10;
+  const result=document.getElementById('calc-result');
+  if(!pid||isNaN(line)||isNaN(odds)){result.classList.remove('show');return;}
+
+  const p=PLAYERS[pid];
+  const s=getStatData(pid,stat);
+  const tp=estimateTrueProb(pid,stat,line,dir);
+  const bp=impliedProb(odds);
+  const ev=computeEV(tp,odds);
+  const evPct=ev*100;
+  const edge=(tp-bp)*100;
+  const beOdds=toAmerican(1/tp);
+  const payout=((toDecimal(odds)-1)*stake).toFixed(2);
+
+  const evEl=document.getElementById('res-ev');
+  evEl.textContent=(evPct>=0?'+':'')+evPct.toFixed(1)+'%';
+  evEl.className='result-val '+(evPct>=3?'val-pos':evPct>=0?'val-break':'val-neg');
+  document.getElementById('res-prob').textContent=Math.round(tp*100)+'%';
+  document.getElementById('res-prob-sub').textContent='Season avg: '+(s?s.avg.toFixed(1):'?')+' | Line: '+line;
+  document.getElementById('res-book-prob').textContent=Math.round(bp*100)+'%';
+  const edgeEl=document.getElementById('res-edge');
+  edgeEl.textContent=(edge>=0?'+':'')+edge.toFixed(1)+'pp';
+  edgeEl.className='result-val '+(edge>=3?'val-pos':edge>=0?'val-break':'val-neg');
+  document.getElementById('res-breakeven').textContent=(beOdds>=0?'+':'')+beOdds;
+  document.getElementById('res-payout').textContent='+$'+payout;
+  document.getElementById('res-payout-sub').textContent='on $'+stake+' stake';
+
+  const statNames={pts:'Points',reb:'Rebounds',ast:'Assists',threes:'3-Pointers',pra:'PRA',pr:'Pts+Reb',pa:'Pts+Ast'};
+  const sn=statNames[stat];
+  const dirL=dir==='over'?'Over':'Under';
+  const vBar=document.getElementById('verdict-bar');
+  const avg=s?s.avg:0;
+  const lineAboveAvg=line>avg;
+
+  let vc,vt,vb;
+  if(evPct>=8){
+    vc='pos';vt='Strong +EV — Worth Betting';
+    vb=p.name+' averages '+avg.toFixed(1)+' '+sn.toLowerCase()+'. Line of '+line+' is '+(line<avg?'set BELOW':'near')+' the season average. True probability ~'+Math.round(tp*100)+'% vs book implied '+Math.round(bp*100)+'%. At +'+evPct.toFixed(1)+'% EV this is a mispriced line — add to your tracker.';
+  } else if(evPct>=2){
+    vc='pos';vt='Moderate +EV — Acceptable Leg';
+    vb='Positive EV at +'+evPct.toFixed(1)+'%. True prob ~'+Math.round(tp*100)+'% vs book '+Math.round(bp*100)+'%. You have the math on your side. Acceptable as part of an SGP where other legs have stronger EV.';
+  } else if(evPct>=-2){
+    vc='break';vt='Near Breakeven — Marginal';
+    vb='EV of '+evPct.toFixed(1)+'% is essentially breakeven. True probability (~'+Math.round(tp*100)+'%) and book implied ('+Math.round(bp*100)+'%) are nearly equal. Only add if you have no better option and your other legs are strongly +EV.';
+  } else if(evPct>=-8){
+    vc='neg';vt='Negative EV — Avoid';
+    vb='At '+evPct.toFixed(1)+'% EV the book has a real edge here. '+(lineAboveAvg&&dir==='over'?'The line is set ABOVE the season average — books overprice Overs on big names. Public bias is working against you.':'True prob ~'+Math.round(tp*100)+'% but you need '+Math.round(bp*100)+'% to break even.')+' Adding this leg reduces your combined SGP EV.';
+  } else {
+    vc='neg';vt='Strong Negative EV — Do Not Bet';
+    vb='This line is significantly mispriced against you at '+evPct.toFixed(1)+'% EV. '+(lineAboveAvg&&dir==='over'?p.name+' averages '+avg.toFixed(1)+' '+sn.toLowerCase()+'. The Over '+line+' requires substantially exceeding the season average — books set these lines knowing the public bets on reputation, not math. This is a classic sportsbook trap.':'Avoid entirely.');
+  }
+
+  vBar.className='verdict-bar '+vc;
+  document.getElementById('verdict-title').textContent=vt;
+  document.getElementById('verdict-text').textContent=vb;
+
+  const addNote=document.getElementById('add-note');
+  addNote.textContent=evPct>=0?'← Add this to your SGP tracker':'← Only add if this is your best available option';
+  addNote.style.color=evPct>=0?'var(--green)':'var(--muted)';
+
+  currentCalcResult={pid,stat,dir,line,odds,tp,ev,evPct,edge,label:p.name+' '+dirL+' '+line+' '+sn,player:p.name};
+  document.getElementById('ps-stake-label').textContent=stake;
+  result.classList.add('show');
+}
+
+let trackerLegs=[];
+
+function addToTracker(){
+  if(!currentCalcResult)return;
+  if(trackerLegs.find(l=>l.label===currentCalcResult.label)){document.getElementById('add-note').textContent='Already in tracker';return;}
+  trackerLegs.push({...currentCalcResult});
+  renderTracker();
+  document.getElementById('add-note').textContent='Checkmark Added!';
+}
+
+function removeFromTracker(i){trackerLegs.splice(i,1);renderTracker();}
+function clearTracker(){trackerLegs=[];renderTracker();}
+
+function renderTracker(){
+  const container=document.getElementById('tracker-legs-container');
+  const summary=document.getElementById('parlay-summary');
+  const stake=parseFloat(document.getElementById('calc-stake').value)||10;
+  if(trackerLegs.length===0){container.innerHTML='<div class="tracker-empty">No legs added. Calculate EV above then add legs here.</div>';summary.style.display='none';return;}
+  container.innerHTML='<div class="tracker-legs">'+trackerLegs.map((leg,i)=>{
+    const ec=leg.evPct>=2?'ev-pos':leg.evPct>=-2?'ev-break':'ev-neg';
+    const etc=leg.evPct>=2?'tleg-ev-pos':leg.evPct>=-2?'tleg-ev-break':'tleg-ev-neg';
+    return '<div class="tracker-leg '+ec+'"><div class="tleg-name">'+leg.label+'</div><span class="tleg-ev '+etc+'">'+(leg.evPct>=0?'+':'')+leg.evPct.toFixed(1)+'% EV</span><span class="tleg-odds">'+(leg.odds>=0?'+':'')+leg.odds+'</span><span class="tleg-hr">'+Math.round(leg.tp*100)+'% true</span><button class="tleg-remove" onclick="removeFromTracker('+i+')">x</button></div>';
+  }).join('')+'</div>';
+  const ctp=trackerLegs.reduce((a,l)=>a*l.tp,1);
+  const cdec=trackerLegs.reduce((a,l)=>a*toDecimal(l.odds),1);
+  const pam=toAmerican(cdec);
+  const pev=computeEV(ctp,pam)*100;
+  const pout=((cdec-1)*stake).toFixed(2);
+  const bi=1/cdec;
+  document.getElementById('ps-legs').textContent=trackerLegs.length;
+  document.getElementById('ps-prob').textContent=Math.round(ctp*100)+'% (book implies '+Math.round(bi*100)+'%)';
+  document.getElementById('ps-odds').textContent=(pam>=0?'+':'')+pam;
+  const psev=document.getElementById('ps-ev');
+  psev.textContent=(pev>=0?'+':'')+pev.toFixed(1)+'%';
+  psev.className='ps-val '+(pev>=0?'ps-ev-pos':'ps-ev-neg');
+  document.getElementById('ps-payout').textContent='+$'+pout;
+  document.getElementById('ps-stake-label').textContent=stake;
+  summary.style.display='block';
+}
+
+function quickCalc(pid,stat,dir,line){
+  document.getElementById('calc-player').value=pid;
+  document.getElementById('calc-stat').value=stat;
+  document.getElementById('calc-dir').value=dir;
+  document.getElementById('calc-line').value=line;
+  document.getElementById('calc-odds').value='';
+  document.getElementById('calc-result').classList.remove('show');
+  document.querySelector('.ev-calc').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('calc-odds').focus();
+}
+
+function renderPlayerCards(){
+  const stj=['ejiofor','hopkinsb','jackson','sellers','sanon'];
+  const ku=['peterson','white','bidunga','council'];
+  function buildCard(id){
+    const p=PLAYERS[id];
+    const chips=['<span class="stat-chip pts">'+p.pts+' pts</span>','<span class="stat-chip reb">'+p.reb+' reb</span>','<span class="stat-chip ast">'+p.ast+' ast</span>','<span class="stat-chip threes">'+p.threes+' 3s</span>'].join('');
+    const qps=[
+      {l:'Pts O'+(p.pts-0.5).toFixed(1),s:'pts',d:'over',v:(p.pts-0.5).toFixed(1)},
+      {l:'Pts U'+(p.pts+1.5).toFixed(1),s:'pts',d:'under',v:(p.pts+1.5).toFixed(1)},
+      {l:'Reb O'+(p.reb-0.5).toFixed(1),s:'reb',d:'over',v:(p.reb-0.5).toFixed(1)},
+      {l:'Ast O'+(p.ast-0.5).toFixed(1),s:'ast',d:'over',v:(p.ast-0.5).toFixed(1)},
+      {l:'PRA O'+(p.pts+p.reb+p.ast-1).toFixed(1),s:'pra',d:'over',v:(p.pts+p.reb+p.ast-1).toFixed(1)},
+      {l:'3PT O'+(p.threes+0.5).toFixed(1),s:'threes',d:'over',v:(p.threes+0.5).toFixed(1)},
+    ];
+    const qcbtns=qps.map(q=>'<button class="qc-btn" onclick="quickCalc(\''+id+'\',\''+q.s+'\',\''+q.d+'\','+q.v+')">'+q.l+'</button>').join('');
+    return '<div class="player-card"><div class="pc-header"><span class="pc-name">'+p.name+'</span><span class="pc-team">'+p.team+'</span><span class="pc-role">'+p.role+'</span></div><div class="stat-chips">'+chips+'</div><div class="pc-analysis '+(p.noteType==='sharp'?'sharp':p.noteType==='trap'?'trap':'')+'">'+p.analysis+'</div><div class="quick-calcs">'+qcbtns+'</div></div>';
+  }
+  document.getElementById('stj-players').innerHTML=stj.map(buildCard).join('');
+  document.getElementById('ku-players').innerHTML=ku.map(buildCard).join('');
+}
+
+renderPlayerCards();
+</script>
+</body>
+</html>
